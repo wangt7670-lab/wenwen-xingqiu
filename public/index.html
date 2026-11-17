@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f5f0" />
+  <meta name="description" content="問問星球 — 異地也能一起玩的雙人問答宇宙。輪流出題、解鎖有趣知識、分享答案與心事。" />
+  <title>問問星球｜兩個人的好奇心宇宙</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="identity">
+        <div class="brand-logo" aria-hidden="true"><span class="orbit-star">✦</span><span class="orb-core"></span></div>
+        <div><strong>問問星球</strong><small>OUR LITTLE QUESTION UNIVERSE</small></div>
+      </div>
+      <div class="header-tools">
+        <button type="button" class="round-icon" id="info-btn" aria-label="玩法說明" title="怎麼玩">?</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-label="歡迎來到問問星球">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="sparkle">✳</span> TWO MINDS, ONE UNIVERSE</div>
+          <h1>距離很遠，<br><em>好奇心</em>卻可以很近。</h1>
+          <p>你問一題、我答一題。從戀愛裡的小秘密，到宇宙裡的大問題，讓每次聊天都有新的發現。</p>
+          <div class="hero-actions"><button class="button primary" id="hero-start">開始出一道題 <span>↗</span></button><button class="button text-button" id="hero-join">邀請另一半 <span>→</span></button></div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="constellation dot-a">✦</div><div class="constellation dot-b">✧</div><div class="constellation dot-c">✳</div>
+          <div class="dotted-orbit"></div><div class="planet-1"><div class="planet-face"><i></i><i></i><span></span></div></div>
+          <div class="planet-2"><div class="planet-face"><i></i><i></i><span></span></div></div>
+          <div class="connector-wave">〰</div><div class="float-heart">♥</div>
+          <div class="hero-note"><b>HEY, YOU!</b><span>今天也有新問題想問你 ♡</span></div>
+        </div>
+      </section>
+
+      <section class="session-strip" id="session-strip" aria-label="兩位玩家和遊戲狀態">
+        <div class="person"><div class="avatar avatar-lilac" id="avatar-a">我</div><div><span class="person-label">PLAYER 01</span><strong id="name-a">我</strong></div></div>
+        <div class="pair-center"><span class="pair-line"></span><span class="heart-center">♥</span><span class="pair-line"></span><small id="pair-state">你出一題，我答一題</small></div>
+        <div class="person right"><div><span class="person-label">PLAYER 02</span><strong id="name-b">TA</strong></div><div class="avatar avatar-peach" id="avatar-b">TA</div></div>
+        <button class="button switch-btn" id="switch-person">切換玩家 ↔</button>
+      </section>
+
+      <nav class="tabs" aria-label="頁面導覽">
+        <button class="tab active" data-tab="play" aria-selected="true">✦ 一起玩</button>
+        <button class="tab" data-tab="create" aria-selected="false">✎ 出題工坊</button>
+        <button class="tab" data-tab="diary" aria-selected="false">◷ 我們的戰績</button>
+      </nav>
+
+      <div id="play-pane" class="pane active">
+        <div class="section-heading"><div><span class="eyebrow dark">TODAY'S CONNECTION</span><h2>今天，想聊點什麼？</h2><p>選一顆小星球，開啟你們的下一場問答。</p></div><span class="date-sticker" id="today-date">TODAY ✷</span></div>
+        <div class="category-grid" id="category-grid"></div>
+        <div class="game-grid">
+          <section class="feature-card" id="game-card" aria-label="當前雙人問答">
+            <div class="feature-top"><span class="eyebrow dark">✦ THE TWO-PERSON CHALLENGE</span><span class="round-tag" id="turn-tag">等待第一道題</span></div>
+            <div id="game-content"></div>
+          </section>
+          <aside class="sidebar">
+            <div class="side-card daily-card"><div class="side-card-icon">☀</div><span class="eyebrow dark">DAILY SPARK</span><h3>今日靈感一題</h3><p id="daily-question">如果你們今天可以交換一天的生活，最想體驗對方的哪個時刻？</p><button class="link-button" id="use-daily">拿這題問 TA ↗</button></div>
+            <div class="side-card score-card"><span class="eyebrow dark">QUESTION STARS</span><h3>好奇心積分</h3><div class="score-pair"><div><small id="score-name-a">我</small><strong id="score-a">0</strong><span>✦ 星星</span></div><span class="score-vs">vs</span><div><small id="score-name-b">TA</small><strong id="score-b">0</strong><span>✦ 星星</span></div></div><div class="score-track"><i id="score-progress"></i></div><p class="score-caption" id="score-caption">第一個挑戰即將開始</p></div>
+          </aside>
+        </div>
+      </div>
+
+      <div id="create-pane" class="pane">
+        <div class="section-heading"><div><span class="eyebrow dark">QUESTION STUDIO</span><h2>把一個問題，寄給 TA。</h2><p>自己寫簡答問題、抽知識題，或請 AI 提供靈感。</p></div><span class="tiny-art">✎ ✦</span></div>
+        <div class="studio-grid">
+          <section class="studio-main">
+            <div class="mode-pills" role="group" aria-label="出題方式"><button class="mode-pill active" data-mode="bank">🎲 抽一道題</button><button class="mode-pill" data-mode="custom">✍ 自己寫</button><button class="mode-pill" data-mode="ai">✨ AI 幫我想</button></div>
+            <div id="editor-content"></div>
+          </section>
+          <aside class="studio-aside"><div class="paper-note"><div class="pin">✦</div><span class="eyebrow dark">LITTLE IDEA</span><h3>問題不必只有標準答案。</h3><p>自己出題不需要準備選項。寫下問題，另一半直接輸入答案；你也可以加上自己的參考答案，作答後才會揭曉。</p><div class="paper-illustration">☁ <span>?</span> ♡</div></div><div class="trust-note"><span>🔒</span><p>私密雙人題目只會出現在你們自己的房間。正式公開部署前，建議加入登入和資料儲存保護。</p></div></aside>
+        </div>
+      </div>
+
+      <div id="diary-pane" class="pane">
+        <div class="section-heading"><div><span class="eyebrow dark">LITTLE DISCOVERIES</span><h2>我們的好奇心足跡</h2><p>記下答對的知識，以及每一次認真交換的想法。</p></div></div>
+        <div class="history-grid"><section class="history-list"><div class="history-header"><h3>最近的問答</h3><span id="history-count">0 次對話</span></div><div id="history-items"></div></section><aside class="history-summary"><span class="eyebrow dark">OUR LITTLE STATS</span><div class="big-stat" id="stat-questions">0</div><p>個一起探索過的問題</p><div class="mini-stat-row"><span>共同好奇心</span><b id="stat-stars">0 ✦</b></div><div class="mini-stat-row"><span>最喜歡的領域</span><b id="stat-topic">等待發現</b></div><button class="button subtle full-width" id="new-round">再出一道題 ↗</button></aside></div>
+      </div>
+    </main>
+
+    <footer><span>問問星球 · 把每一次提問，變成靠近彼此的理由。</span><span>MADE FOR CURIOUS HEARTS ♡</span></footer>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop"><div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-label="雙人連線"></div></div>
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+  <div class="burst-layer" id="burst-layer" aria-hidden="true"></div>
+  <script src="app.js"></script>
+</body>
+</html>
