@@ -10,6 +10,9 @@ function select(id, label, choices, selected) {
 }
 
 export function sourceLink(q) {
+  if (q.source) {
+    return `<div class="published-source"><strong>${escape(q.source.title)} · ${escape(q.source.location)}</strong>${q.source.excerpt ? `<blockquote>${escape(q.source.excerpt)}</blockquote>` : ''}</div>`;
+  }
   const url = safeSourceUrl(q.source_url);
   if (!url) return '';
   const dates = q.eventDate && q.publishedDate ?
@@ -27,24 +30,24 @@ function preview(q, categoryName) {
 
 export function bankEditor(q, topic, filters, matched, categoryName) {
   return `<div class="studio-editor"><h3>${topic === 'news' ? '媒體識讀練習' : '抽一張好奇心卡片'}</h3>
-    ${topic === 'news' ? `<p class="lead">用情境題練習查證消息。想玩近期新聞，請用 AI 搜尋。</p><button class="button subtle" data-editor="go-ai">✨ 生成即時新聞題</button>` : ''}
+    ${topic === 'news' ? `<p class="lead">用情境題練習查證消息。也可以上傳近期文章作為出題來源。</p><button class="button subtle" data-editor="go-documents">從文章出題</button>` : ''}
     <form id="bank-filters">
       <div class="fields-2">${select('bank-level', '難度', { '': '不限', ...LEVELS }, filters.level)}${select('bank-style', '風格', { '': '不限', ...STYLES }, filters.style)}</div>
       <div class="field"><label for="bank-keywords">搜尋題庫（可選）</label><input id="bank-keywords" maxlength="100" value="${escape(filters.keywords)}"></div>
       <button class="button subtle" type="submit">套用篩選</button>
     </form>
     ${q ? `<div class="bank-question">${preview(q, categoryName)}</div><div class="studio-actions"><button class="button subtle" data-editor="shuffle">↻ 換一題</button><button class="button primary" data-editor="send">💌 寄給 TA ↗</button></div>` :
-      `<div class="ai-warning" role="status">${matched ? '符合條件的題目已抽完。你可以重抽本類，或請 AI 生成新題。' : '沒有符合條件的題目，請調整篩選。'}</div>
-      <div class="studio-actions">${matched ? '<button class="button subtle" data-editor="reset-bank">重抽本類</button>' : ''}<button class="button primary" data-editor="go-ai">✨ 前往 AI 出題</button></div>`}
+      `<div class="ai-warning" role="status">${matched ? '符合條件的題目已抽完。你可以重抽本類，或用自己的資料出題。' : '沒有符合條件的題目，請調整篩選。'}</div>
+      <div class="studio-actions">${matched ? '<button class="button subtle" data-editor="reset-bank">重抽本類</button>' : ''}<button class="button primary" data-editor="go-documents">用資料出題</button></div>`}
     </div>`;
 }
 
-export function aiEditor(settings, categories, busy, online, hasKey) {
-  const status = !online ? '加入線上房間後即可使用 AI。' : !hasKey ? '伺服器尚未啟用 AI 出題。' : '';
-  return `<h3>批量 AI 出題 ✨</h3><form id="ai-settings">
+export function quickEditor(settings, categories, busy, online) {
+  const status = !online ? '加入線上房間後，可從內建題庫批量整理草稿。' : '';
+  return `<h3>從內建題庫整理草稿</h3><form id="ai-settings">
     <div class="fields-2">${select('ai-topic','出題領域',Object.fromEntries(categories.map(q => [q.id,q.name])),settings.topic)}
       ${select('ai-type','題型',{open:'簡答',choice:'四選一'},settings.type)}</div>
-    <div class="fields-2">${select('ai-tone','難度',LEVELS,settings.level)}${select('ai-style','風格',STYLES,settings.style)}</div>
+    <div class="fields-2">${select('ai-tone','難度',{'':'不限',...LEVELS},settings.level)}${select('ai-style','風格',{'':'不限',...STYLES},settings.style)}</div>
     <div class="fields-2">${select('ai-count','題數',{1:'1 題',5:'5 題',10:'10 題'},settings.count)}
       <div class="field"><label for="ai-keywords">關鍵字（可選）</label><input id="ai-keywords" maxlength="150" value="${escape(settings.keywords)}" placeholder="例如：天文、香港歷史"></div></div>
     ${status ? `<p class="ai-warning">${status} <button type="button" class="link-button" data-editor="${online ? 'go-bank' : 'connect'}">${online ? '抽一道內建題' : '連接房間'}</button></p>` : ''}
@@ -61,14 +64,16 @@ function editFields(q) {
     ${select(`${id}-answerIndex`, '正解', {0:'A',1:'B',2:'C',3:'D'}, q.answerIndex)}`}${area('explanation', '解析', 600)}</fieldset>`;
 }
 
-export function reviewCard(q, categoryName, { editing, saved, favorites }) {
+export function reviewCard(q, categoryName, { editing, saved, favorites, online, material, local }) {
   const state = { draft: '待審核', approved: '已核可', used: '已使用' }[q.reviewState];
+  const origin = q.origin === 'local-ai' ? '本地 AI 改寫' : q.origin === 'ai' ? 'AI 生成' : '規則草稿';
+  const publish = online ? '<button class="button primary" data-editor="share-library">分享至房間題庫 ↗</button>' : '';
   return `<article class="bank-question review-card" data-question-id="${escape(q.id)}">
-    <p class="review-state">AI 生成 · ${state} · ${new Date(q.generatedAt).toLocaleDateString('zh-Hant')}</p>
+    <p class="review-state">${origin} · ${state} · ${new Date(q.generatedAt).toLocaleDateString('zh-Hant')}</p>
     ${preview(q, categoryName)}${editing ? editFields(q) : ''}
     <div class="studio-actions">${editing ? `<button class="button primary" data-editor="approve">儲存並核可</button><button class="button subtle" data-editor="cancel-edit">取消編輯</button>` :
-      `<button class="button subtle" data-editor="edit">編輯</button>${q.reviewState === 'draft' ? '<button class="button primary" data-editor="approve">核可題目</button>' :
-      `${saved ? '' : '<button class="button subtle" data-editor="favorite">♡ 收藏</button>'}<button class="button primary" data-editor="send-ai">💌 寄給 TA ↗</button>`}
+      `<button class="button subtle" data-editor="edit">編輯</button>${local ? '<button class="button subtle" data-editor="local-rewrite">在此裝置改寫題幹</button>' : ''}${q.reviewState === 'draft' ? '<button class="button primary" data-editor="approve">核可題目</button>' :
+      `${publish}${material || saved ? '' : '<button class="button subtle" data-editor="favorite">♡ 收藏</button>'}${material ? '' : '<button class="button subtle" data-editor="send-ai">💌 寄給 TA ↗</button>'}`}
       <button class="link-button" data-editor="${favorites ? 'unfavorite' : 'discard'}">${favorites ? '取消收藏' : '移除草稿'}</button>`}</div>
   </article>`;
 }

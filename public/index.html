@@ -47,6 +47,7 @@
       <nav class="tabs" aria-label="頁面導覽">
         <button class="tab active" data-tab="play" aria-selected="true">✦ 一起玩</button>
         <button class="tab" data-tab="create" aria-selected="false">✎ 出題工坊</button>
+        <button class="tab" data-tab="challenge" aria-selected="false">✦ 雙人闖關</button>
         <button class="tab" data-tab="diary" aria-selected="false">◷ 我們的戰績</button>
       </nav>
 
@@ -69,11 +70,15 @@
         <div class="section-heading"><div><span class="eyebrow dark">QUESTION STUDIO</span><h2>把一個問題，寄給 TA。</h2><p>自己寫簡答問題、抽知識題，或請 AI 提供靈感。</p></div><span class="tiny-art">✎ ✦</span></div>
         <div class="studio-grid">
           <section class="studio-main">
-            <div class="mode-pills" role="group" aria-label="出題方式"><button class="mode-pill active" data-mode="bank">🎲 抽一道題</button><button class="mode-pill" data-mode="custom">✍ 自己寫</button><button class="mode-pill" data-mode="ai">✨ AI 幫我想</button><button class="mode-pill" data-mode="favorites">♡ 我的收藏</button></div>
+            <div class="mode-pills" role="group" aria-label="出題方式"><button class="mode-pill active" data-mode="bank">🎲 抽一道題</button><button class="mode-pill" data-mode="custom">✍ 自己寫</button><button class="mode-pill" data-mode="ai">✨ 快速出題</button><button class="mode-pill" data-mode="documents">▤ 資料出題</button><button class="mode-pill" data-mode="library">✦ 房間題庫</button><button class="mode-pill" data-mode="favorites">♡ 我的收藏</button></div>
             <div id="editor-content"></div>
           </section>
           <aside class="studio-aside"><div class="paper-note"><div class="pin">✦</div><span class="eyebrow dark">LITTLE IDEA</span><h3>問題不必只有標準答案。</h3><p>自己出題不需要準備選項。寫下問題，另一半直接輸入答案；你也可以加上自己的參考答案，作答後才會揭曉。</p><div class="paper-illustration">☁ <span>?</span> ♡</div></div><div class="trust-note"><span>🔒</span><p>私密雙人題目只會出現在你們自己的房間。正式公開部署前，建議加入登入和資料儲存保護。</p></div></aside>
         </div>
+      </div>
+
+      <div id="challenge-pane" class="pane">
+        <div id="challenge-content" class="feature-card"></div>
       </div>
 
       <div id="diary-pane" class="pane">

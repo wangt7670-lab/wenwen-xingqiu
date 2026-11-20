@@ -1,9 +1,10 @@
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { AIError, apiKey, factualTopics, generateAI, hasValidOptions, recentNewsDates } from './ai.mjs';
-import { bank } from '../public/question-bank.js';
+import { ApiError, fail, readBody, str, UUID } from './http.mjs';
+import { builtInDrafts, TOPICS, validOptions } from './rules.mjs';
+import { getRoomQuestions, handleLibrary } from './library.mjs';
+import { handleChallenge } from './challenges.mjs';
 import { LEVELS, safeSourceUrl, STYLES, validDate } from '../public/question-tools.js';
 
-const CATEGORIES = new Set(['couple', 'why', 'science', 'history', 'riddle', 'news']);
 const ROOM_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const API_HEADERS = {
@@ -13,12 +14,10 @@ const API_HEADERS = {
   'Referrer-Policy': 'no-referrer'
 };
 
-class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } }
-const fail = (status, message) => { throw new ApiError(status, message); };
-const str = (s, max=150) => String(s ?? '').trim().slice(0,max);
 const now = () => Date.now();
 const json = (data,status=200) => Response.json(data,{status,headers:API_HEADERS});
 const ready = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
+const generatorFlags = () => ({aiEnabled:ready(), ruleGeneration:true, localAiEnabled:process.env.ENABLE_LOCAL_AI==='true'});
 const BASE = () => String(process.env.SUPABASE_URL || '').replace(/\/$/,'');
 const SECRET = () => String(process.env.SUPABASE_SECRET_KEY || '');
 
@@ -32,7 +31,7 @@ function constantEqual(a,b) {
   return aa.length===bb.length && timingSafeEqual(aa,bb);
 }
 
-async function supabase(method, query='', body, headers={}, resource='quiz_rooms') {
+export async function supabase(method, query='', body, headers={}, resource='quiz_rooms') {
   if(!ready()) fail(503,'線上房間尚未設定 Supabase，請先完成部署設定。');
   const controller = new AbortController();
   const timeout=setTimeout(()=>controller.abort(),9500);
@@ -54,7 +53,7 @@ async function supabase(method, query='', body, headers={}, resource='quiz_rooms
     if(!res.ok) {
       if(res.status===409) fail(409,'資料已更新，請重試一次。');
       if(res.status===401 || res.status===403) fail(503,'Supabase Secret Key 無效或沒有權限。');
-      if(res.status===404) fail(503,resource==='quiz_rooms'?'找不到 Supabase 資料表，請先執行 schema.sql。':'AI 用量服務尚未就緒，請先使用內建題庫。');
+      if(res.status===404) fail(503,resource==='quiz_rooms'?'找不到 Supabase 資料表，請先執行 schema.sql。':'資料或闖關服務尚未完成資料庫設定。');
       fail(503,'線上資料庫暫時無法使用，請稍後再試。');
     }
     return data;
@@ -65,14 +64,6 @@ async function supabase(method, query='', body, headers={}, resource='quiz_rooms
   } finally {clearTimeout(timeout)}
 }
 
-async function readBody(request) {
-  if(Number(request.headers.get('content-length')||0)>24000) fail(413,'資料太大');
-  let raw='';
-  try {raw=await request.text()}catch {fail(400,'無法讀取提交內容')}
-  if(raw.length>24000) fail(413,'資料太大');
-  try {return raw?JSON.parse(raw):{}}catch {fail(400,'請提交有效 JSON')}
-}
-
 function view(room,who) {
   const current=room.current?{...room.current}:null;
   if(current&&!current.answered&&current.createdBy!==who) {
@@ -81,6 +72,7 @@ function view(room,who) {
     delete current.explanation;
     delete current.source_url;
     delete current.source_title;
+    delete current.source;
     delete current.publishedDate;
     delete current.eventDate;
   }
@@ -97,7 +89,7 @@ function auth(request,room) {
 function validateQuestion(q) {
   if(!q||typeof q!=='object'||Array.isArray(q)) fail(400,'題目格式不正確');
   const type=q.type==='open'?'open':'choice';
-  const topic=CATEGORIES.has(q.topic)?q.topic:'couple';
+  const topic=TOPICS.has(q.topic)?q.topic:'couple';
   const question=str(q.question,300);
   if(question.length<2) fail(400,'問題至少需要兩個字');
   const options=type==='choice'?(Array.isArray(q.options)?q.options.map(x=>str(x,120)).slice(0,4):[]):[];
@@ -108,11 +100,9 @@ function validateQuestion(q) {
   const isReviewedAI=q.origin==='ai' && q.reviewState!==undefined;
   if(isReviewedAI) {
     if(q.reviewState!=='approved') fail(400,'請先核可 AI 題目');
-    if(type==='choice'&&!hasValidOptions(q.options,q.answerIndex)) fail(400,'請提供四個不同選項和唯一正解');
+    if(type==='choice'&&!validOptions(q.options,q.answerIndex)) fail(400,'請提供四個不同選項和唯一正解');
     if(type==='open'&&topic!=='couple'&&!str(q.referenceAnswer,300)) fail(400,'請填寫參考答案');
     if(!str(q.explanation,600)||!Number.isSafeInteger(q.generatedAt)||q.generatedAt<=0) fail(400,'AI 題目缺少解析或生成時間');
-    if(factualTopics.has(topic)&&(!source||!str(q.source_title,150))) fail(400,'請保留題目的來源');
-    if(topic==='news'&&!recentNewsDates(q.publishedDate,q.eventDate)) fail(400,'時事題的發布或事件日期已超出範圍');
   }
   return {
     id:randomUUID(),topic,type,question,
@@ -122,7 +112,7 @@ function validateQuestion(q) {
     explanation:str(q.explanation,600),
     source_url:source,
     source_title:str(q.source_title,150),
-    origin:['bank','custom','ai','demo-ai'].includes(q.origin)?q.origin:'custom',
+    origin:['bank','custom','ai','demo-ai','rules','local-ai'].includes(q.origin)?q.origin:'custom',
     ...(Object.hasOwn(LEVELS,q.level)?{level:q.level}:{}),
     ...(Object.hasOwn(STYLES,q.style)?{style:q.style}:{}),
     ...(validDate(q.publishedDate)?{publishedDate:q.publishedDate}:{}),
@@ -172,53 +162,45 @@ async function mutate(code, fn) {
 
 async function generateForRoom(request) {
   const body = await readBody(request);
-  if (!body || typeof body !== 'object' || Array.isArray(body)) fail(400,'AI 出題設定格式不正確');
-  const legacy = body.count === undefined && body.type === undefined && body.style === undefined;
-  const topic = CATEGORIES.has(body.topic) ? body.topic : 'science';
-  const count = body.count ?? 1;
-  const type = body.type ?? (topic === 'couple' ? 'open' : 'choice');
-  const level = legacy && !Object.hasOwn(LEVELS,body.level) ? 'light' : body.level ?? 'light';
-  const style = body.style ?? 'serious';
-  if (![1,5,10].includes(count) || !['open','choice'].includes(type) ||
-      !Object.hasOwn(LEVELS,level) || !Object.hasOwn(STYLES,style) ||
-      (!legacy && body.topic !== undefined && !CATEGORIES.has(body.topic))) fail(400,'AI 出題設定不正確');
-
   const code = str(body.room,12).toUpperCase();
   const { payload:room } = await load(code);
   auth(request,room);
-  if (!apiKey()) fail(503,'AI 出題尚未啟用，請先使用內建題庫。');
-  const reservation = await supabase('POST','',{room_code:code,question_count:count},{},'rpc/reserve_quiz_ai');
-  if (reservation === 'cooldown') fail(429,'這個房間剛生成過題目，請等待約 40 秒再試。');
-  if (reservation === 'room_limit') fail(429,'這間房間已達今日 AI 題數上限（30 題），請先使用內建題庫。');
-  if (reservation === 'global_limit') fail(429,'全站已達今日 AI 題數上限，請先使用內建題庫。');
-  if (reservation !== 'ok') fail(503,'AI 用量服務暫時無法使用。');
-
-  const clientRecent = Array.isArray(body.recent) ?
-    body.recent.slice(0,30).filter(x=>typeof x==='string'&&x.length<=300) : [];
-  const excluded = [
-    ...bank.filter(q=>q.topic===topic).map(q=>q.question),
-    ...room.history.map(q=>q.question),
-    ...(room.current ? [room.current.question] : []),
-    ...clientRecent
-  ];
-  const questions = await generateAI({topic,count,type,level,style,keywords:str(body.keywords,150)},excluded);
-  // The first question keeps the existing response shape for older clients.
-  const { reviewState, ...legacyQuestion } = questions[0];
-  return json({question:legacy ? legacyQuestion : questions[0],questions});
+  const topic = TOPICS.has(body.topic) ? body.topic : 'science';
+  const type = body.type ?? (topic === 'couple' ? 'open' : 'choice');
+  const count = body.count ?? 1;
+  if (![1,5,10].includes(count) || !['open','choice'].includes(type)) fail(400,'出題設定無效。');
+  const recent = Array.isArray(body.recent) ? body.recent.slice(0,60).filter(x=>typeof x==='string'&&x.length<=300) : [];
+  const excluded = [...room.history.map(q=>q.question),room.current?.question,...recent].filter(Boolean);
+  const questions = builtInDrafts({
+    topic,type,count,keywords:str(body.keywords,150),
+    level:Object.hasOwn(LEVELS,body.level)?body.level:'',
+    style:Object.hasOwn(STYLES,body.style)?body.style:''
+  },excluded);
+  if (!questions.length && body.count===undefined) fail(422,'沒有符合條件的新題，請改用其他主題。');
+  return json({question:questions[0]??null,questions});
 }
 
 export async function handleApi(request) {
   const url=new URL(request.url),p=url.pathname,method=request.method.toUpperCase();
   try {
     if(method==='GET'&&p==='/api/health') {
-      if(!ready())return json({ok:true,onlineReady:false,aiEnabled:!!apiKey(),message:'尚未設定 Supabase 環境變數'});
+      if(!ready())return json({ok:true,onlineReady:false,...generatorFlags(),message:'尚未設定 Supabase 環境變數'});
       await supabase('GET','?select=code&limit=1');
-      return json({ok:true,onlineReady:true,aiEnabled:!!apiKey(),message:'雙人服務已就緒'});
+      return json({ok:true,onlineReady:true,...generatorFlags(),message:'雙人服務已就緒'});
     }
     if(method==='POST'&&p==='/api/rooms') {
       const body=await readBody(request);
       const {room,playerId,token:authToken}=await createRoom(str(body.name,16)||'我');
-      return json({code:room.code,playerId,token:authToken,room:view(room,playerId),aiEnabled:!!apiKey()},201);
+      return json({code:room.code,playerId,token:authToken,room:view(room,playerId),...generatorFlags()},201);
+    }
+    const materials=p.match(/^\/api\/rooms\/([A-Z2-9]{8})\/(documents|library|challenge)(?:\/([a-zA-Z0-9-]{1,36}))?(?:\/([a-z]{1,12}))?$/);
+    if(materials) {
+      const [,code,...parts]=materials;
+      const {payload:room}=await load(code);
+      const who=auth(request,room);
+      const context={db:supabase,code,room,who,parts,validateQuestion};
+      const result=parts[0]==='challenge' ? await handleChallenge(request,context) : await handleLibrary(request,context);
+      return result instanceof Response ? result : json(result);
     }
     const m=p.match(/^\/api\/rooms\/([A-Z2-9]{8})(?:\/(join|question|answer|next))?$/);
     if(m) {
@@ -232,17 +214,28 @@ export async function handleApi(request) {
           r.players.push({id,name:str(body.name,16)||'TA',token:t,score:0});
           identity={id,token:t};
         });
-        return json({code,playerId:identity.id,token:identity.token,room:view(room,identity.id),aiEnabled:!!apiKey()});
+        return json({code,playerId:identity.id,token:identity.token,room:view(room,identity.id),...generatorFlags()});
       }
-      if(method==='GET'&&!op){const row=await load(code),person=auth(request,row.payload);return json({room:view(row.payload,person.id),aiEnabled:!!apiKey()})}
+      if(method==='GET'&&!op){const row=await load(code),person=auth(request,row.payload);return json({room:view(row.payload,person.id),...generatorFlags()})}
       if(method!=='POST')fail(405,'不支援此操作');
       if(op==='question') {
         const body=await readBody(request);
+        let saved=null;
+        if (body.libraryId!==undefined) {
+          if (typeof body.libraryId!=='string'||!UUID.test(body.libraryId))fail(400,'題目識別碼無效。');
+          const {payload}=await load(code);
+          const who=auth(request,payload);
+          const [entry]=await getRoomQuestions(supabase,code,[body.libraryId]);
+          if(!entry||entry.owner_id!==who.id)fail(404,'找不到可寄出的題目。');
+          saved=entry.content;
+        }
         const {room,result}=await mutate(code,r=>{
           const who=auth(request,r);
           if(r.players.length<2)fail(409,'等待另一半加入後才能出題');
           if(r.current)fail(409,'這一題尚未結束');
-          const q=validateQuestion(body); q.createdBy=who.id; r.current=q;
+          const q=validateQuestion(saved??body); q.createdBy=who.id;
+          if(saved?.source)q.source=saved.source;
+          r.current=q;
           return who.id;
         });
         return json({ok:true,room:view(room,result)});
@@ -282,11 +275,11 @@ export async function handleApi(request) {
       }
       fail(404,'未知房間操作');
     }
-    if(method==='POST'&&p==='/api/ai') return await generateForRoom(request);
+    if(method==='POST'&&(p==='/api/ai'||p==='/api/questions/generate')) return await generateForRoom(request);
     fail(404,'找不到 API 路徑');
   } catch(e) {
-    const code=e instanceof ApiError || e instanceof AIError ? e.status : 500;
-    if(code===500)console.error('[問問星球 API]',method,p,e?.message||'internal error');
+    const code=e instanceof ApiError ? e.status : 500;
+    if(code===500)console.error('[問問星球 API]',method,e?.name||'Error');
     return json({error:code===500?'伺服器出現問題，請稍後再試':e.message},code);
   }
 }

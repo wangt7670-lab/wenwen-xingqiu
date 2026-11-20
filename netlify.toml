@@ -1,9 +1,21 @@
 [build]
+  command = "npm run build"
   publish = "public"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "22"
+
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["pdfjs-dist", "@napi-rs/canvas"]
+  included_files = [
+    "node_modules/pdfjs-dist/package.json",
+    "node_modules/pdfjs-dist/legacy/build/*.mjs",
+    "node_modules/pdfjs-dist/cmaps/**",
+    "node_modules/pdfjs-dist/standard_fonts/**",
+    "node_modules/@napi-rs/canvas*/**"
+  ]
 
 # API routing is handled directly by Netlify Function `config.path = "/api/*"`.
 # Do NOT put secrets here: netlify.toml values are not runtime function secrets.
