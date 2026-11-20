@@ -200,15 +200,18 @@ test('news needs actual search sources and recent dates, preserved only after th
  const date=new Date().toISOString().slice(0,10);
  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
  const news={...example(prompts[0],'open'),source_url:'https://example.org/report',source_title:'報導',publishedDate:date,eventDate:date};
- const evidence=(hasCitation=true)=>mockResponse({status:'completed',output:[
+ const evidence=(hasCitation=true, eventDate=date)=>mockResponse({status:'completed',output:[
   {type:'web_search_call',status:'completed',action:{type:'search'}},
-  {type:'message',content:[{type:'output_text',text:`發布日 ${date}、事件日 ${date}，請參考 ${news.source_url}`,
+  {type:'message',content:[{type:'output_text',text:`**發布日：**${date.replaceAll('-','‑')}、事件日：${eventDate}，請參考 ${news.source_url}`,
    annotations:hasCitation?[{type:'url_citation',url:news.source_url,title:news.source_title}]:[]}]}
  ]});
  openAI=()=>evidence(false);
  const countBefore=requests.length;
  assert.equal((await call('/api/ai','POST',body,a.token)).status,422);
  assert.equal(requests.length,countBefore+1,'Do not generate from URLs without source metadata');
+ openAI=()=>evidence(true,date.slice(0,8)+'XX');
+ assert.equal((await call('/api/ai','POST',body,a.token)).status,422);
+ assert.equal(requests.length,countBefore+2,'Do not generate news when the source notes omit the event date');
  for(const invalid of [{...news,eventDate:'2020-02-01'},{...news,eventDate:yesterday},{...news,source_url:'https://example.org/unverified'}]) {
   openAI=payload=>payload.tools?evidence():completed([invalid]);
   assert.equal((await call('/api/ai','POST',body,a.token)).status,502);
