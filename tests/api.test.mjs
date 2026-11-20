@@ -168,6 +168,11 @@ test('AI authenticates and reserves before spending quota and returns safe error
   assert.equal(response.status,status);
   assert.doesNotMatch(response.error,/testing-only|must not leak/);
  }
+ openAI=()=>mockResponse({error:{code:'credit_balance_exhausted',message:'sensitive provider diagnostic'}},429);
+ const depleted=await call('/api/ai','POST',body,a.token);
+ assert.equal(depleted.status,429);
+ assert.match(depleted.error,/帳戶額度已用完/);
+ assert.doesNotMatch(depleted.error,/sensitive|credit_balance_exhausted/);
  openAI=()=>mockResponse({status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'secret'}]}]});
  assert.equal((await call('/api/ai','POST',body,a.token)).status,422);
  openAI=()=>{throw new DOMException('sensitive diagnostic','TimeoutError');};
@@ -193,20 +198,37 @@ test('news needs actual search sources and recent dates, preserved only after th
  const b=await call(`/api/rooms/${a.code}/join`,'POST',{name:'B'});
  const body={room:a.code,topic:'news',count:1,type:'open'};
  const date=new Date().toISOString().slice(0,10);
+ const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
  const news={...example(prompts[0],'open'),source_url:'https://example.org/report',source_title:'報導',publishedDate:date,eventDate:date};
- const search=[{type:'web_search_call',status:'completed',action:{sources:[{url:news.source_url}]}}];
- openAI=()=>completed([news]);
- assert.equal((await call('/api/ai','POST',body,a.token)).status,502);
- openAI=()=>completed([{...news,eventDate:'2020-02-01'}],search);
- assert.equal((await call('/api/ai','POST',body,a.token)).status,502);
+ const evidence=(hasCitation=true)=>mockResponse({status:'completed',output:[
+  {type:'web_search_call',status:'completed',action:{type:'search'}},
+  {type:'message',content:[{type:'output_text',text:`發布日 ${date}、事件日 ${date}，請參考 ${news.source_url}`,
+   annotations:hasCitation?[{type:'url_citation',url:news.source_url,title:news.source_title}]:[]}]}
+ ]});
+ openAI=()=>evidence(false);
+ const countBefore=requests.length;
+ assert.equal((await call('/api/ai','POST',body,a.token)).status,422);
+ assert.equal(requests.length,countBefore+1,'Do not generate from URLs without source metadata');
+ for(const invalid of [{...news,eventDate:'2020-02-01'},{...news,eventDate:yesterday},{...news,source_url:'https://example.org/unverified'}]) {
+  openAI=payload=>payload.tools?evidence():completed([invalid]);
+  assert.equal((await call('/api/ai','POST',body,a.token)).status,502);
+ }
  openAI=payload=>{
-  assert.equal(payload.tool_choice,'required');
-  assert.equal(payload.max_tool_calls,4);
-  assert.deepEqual(payload.include,['web_search_call.action.sources']);
-  return completed([news],search);
+  if(payload.tools) {
+   assert.equal(payload.tool_choice,'required');
+   assert.equal(payload.max_tool_calls,4);
+   assert.deepEqual(payload.include,['web_search_call.action.sources']);
+   assert.equal(payload.text,undefined);
+   return evidence();
+  }
+  assert.equal(payload.text.format.strict,true);
+  assert.deepEqual(JSON.parse(payload.input).可用來源,[news.source_url]);
+  return completed([news]);
  };
+ const priorReservations=reservations.length;
  const generated=await call('/api/ai','POST',body,a.token);
  assert.equal(generated.status,200);
+ assert.equal(reservations.length,priorReservations+1);
  const draft=generated.questions[0];
  const roomEndpoint=`/api/rooms/${a.code}`;
  assert.equal((await call(roomEndpoint+'/question','POST',draft,a.token)).status,400);
