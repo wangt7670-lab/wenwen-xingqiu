@@ -1,4 +1,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { AIError, apiKey, factualTopics, generateAI, hasValidOptions, recentNewsDates } from './ai.mjs';
+import { bank } from '../public/question-bank.js';
+import { LEVELS, safeSourceUrl, STYLES, validDate } from '../public/question-tools.js';
 
 const CATEGORIES = new Set(['couple', 'why', 'science', 'history', 'riddle', 'news']);
 const ROOM_TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -16,10 +19,8 @@ const str = (s, max=150) => String(s ?? '').trim().slice(0,max);
 const now = () => Date.now();
 const json = (data,status=200) => Response.json(data,{status,headers:API_HEADERS});
 const ready = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
-const apiKey = () => String(process.env.OPENAI_API_KEY || '').trim();
 const BASE = () => String(process.env.SUPABASE_URL || '').replace(/\/$/,'');
 const SECRET = () => String(process.env.SUPABASE_SECRET_KEY || '');
-const roomUrl = (query='') => `${BASE()}/rest/v1/quiz_rooms${query}`;
 
 function roomCode() {
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -31,12 +32,12 @@ function constantEqual(a,b) {
   return aa.length===bb.length && timingSafeEqual(aa,bb);
 }
 
-async function supabase(method, query='', body, headers={}) {
+async function supabase(method, query='', body, headers={}, resource='quiz_rooms') {
   if(!ready()) fail(503,'線上房間尚未設定 Supabase，請先完成部署設定。');
   const controller = new AbortController();
   const timeout=setTimeout(()=>controller.abort(),9500);
   try {
-    const res=await fetch(roomUrl(query), {
+    const res=await fetch(`${BASE()}/rest/v1/${resource}${query}`, {
       method,
       headers:{
         apikey:SECRET(),
@@ -53,7 +54,7 @@ async function supabase(method, query='', body, headers={}) {
     if(!res.ok) {
       if(res.status===409) fail(409,'資料已更新，請重試一次。');
       if(res.status===401 || res.status===403) fail(503,'Supabase Secret Key 無效或沒有權限。');
-      if(res.status===404) fail(503,'找不到 Supabase 資料表，請先執行 schema.sql。');
+      if(res.status===404) fail(503,resource==='quiz_rooms'?'找不到 Supabase 資料表，請先執行 schema.sql。':'AI 用量服務尚未就緒，請先使用內建題庫。');
       fail(503,'線上資料庫暫時無法使用，請稍後再試。');
     }
     return data;
@@ -80,6 +81,8 @@ function view(room,who) {
     delete current.explanation;
     delete current.source_url;
     delete current.source_title;
+    delete current.publishedDate;
+    delete current.eventDate;
   }
   return {code:room.code,players:room.players.map(({id,name,score})=>({id,name,score})),round:room.round,current,history:room.history.slice(-40),updatedAt:room.updatedAt};
 }
@@ -101,16 +104,30 @@ function validateQuestion(q) {
   if(type==='choice'&&(options.length!==4 || options.some(x=>!x))) fail(400,'選擇題需要四個有效選項');
   const answerIndex=Number(q.answerIndex);
   if(type==='choice'&&(!Number.isInteger(answerIndex)||answerIndex<0||answerIndex>3)) fail(400,'正確答案編號無效');
-  const source=str(q.source_url,450);
+  const source=safeSourceUrl(str(q.source_url,450));
+  const isReviewedAI=q.origin==='ai' && q.reviewState!==undefined;
+  if(isReviewedAI) {
+    if(q.reviewState!=='approved') fail(400,'請先核可 AI 題目');
+    if(type==='choice'&&!hasValidOptions(q.options,q.answerIndex)) fail(400,'請提供四個不同選項和唯一正解');
+    if(type==='open'&&topic!=='couple'&&!str(q.referenceAnswer,300)) fail(400,'請填寫參考答案');
+    if(!str(q.explanation,600)||!Number.isSafeInteger(q.generatedAt)||q.generatedAt<=0) fail(400,'AI 題目缺少解析或生成時間');
+    if(factualTopics.has(topic)&&(!source||!str(q.source_title,150))) fail(400,'請保留題目的來源');
+    if(topic==='news'&&!recentNewsDates(q.publishedDate,q.eventDate)) fail(400,'時事題的發布或事件日期已超出範圍');
+  }
   return {
     id:randomUUID(),topic,type,question,
     tag:str(q.tag,120),options,
     answerIndex:type==='choice'?answerIndex:0,
     referenceAnswer:type==='open'?str(q.referenceAnswer,300):'',
     explanation:str(q.explanation,600),
-    source_url:/^https:\/\//i.test(source)?source:'',
+    source_url:source,
     source_title:str(q.source_title,150),
     origin:['bank','custom','ai','demo-ai'].includes(q.origin)?q.origin:'custom',
+    ...(Object.hasOwn(LEVELS,q.level)?{level:q.level}:{}),
+    ...(Object.hasOwn(STYLES,q.style)?{style:q.style}:{}),
+    ...(validDate(q.publishedDate)?{publishedDate:q.publishedDate}:{}),
+    ...(validDate(q.eventDate)?{eventDate:q.eventDate}:{}),
+    ...(isReviewedAI?{reviewState:'used',generatedAt:q.generatedAt}:{}),
     createdAt:now(),answered:false,answerBy:null,answerText:null,selectedIndex:null,isCorrect:null
   };
 }
@@ -153,31 +170,41 @@ async function mutate(code, fn) {
   fail(409,'另一半正在操作，請重新整理後再試。');
 }
 
-async function generateAI(topic,level,keywords) {
-  if(!apiKey()) fail(503,'尚未設定 OPENAI_API_KEY，請先使用內建題庫');
-  const news=topic==='news';
-  const names={couple:'情侶溝通、異地戀與互相了解',why:'十萬個為什麼與日常現象',science:'科學、動物與宇宙',history:'世界與中國歷史',riddle:'腦筋急轉彎',news:'可核實的最新新聞'};
-  const schema={type:'object',properties:{type:{type:'string',enum:['choice','open']},question:{type:'string'},tag:{type:'string'},options:{type:'array',items:{type:'string'}},answerIndex:{type:'integer'},explanation:{type:'string'},source_url:{type:'string'},source_title:{type:'string'}},required:['type','question','tag','options','answerIndex','explanation','source_url','source_title'],additionalProperties:false};
-  const prompt=`你為兩位異地情侶創作一道繁體中文問答題，領域：${names[topic]}，難度：${{light:'輕鬆',medium:'中等',hard:'挑戰'}[level]||'輕鬆'}，額外關鍵字：${keywords||'不限'}。\n`+
-    `「關於我們」可出開放簡答題，其他領域用四選一。禁止猜測真實情侶的私人資訊。選擇題必須有唯一正確答案及清晰的說明。`+
-    (news?'請使用 web_search 檢索近期真實新聞，題目須可核實，提供 HTTPS 來源網址與標題及明確事件日期。':'非新聞題 source_url 和 source_title 填空字串。');
-  const payload={model:news?(process.env.OPENAI_NEWS_MODEL||'gpt-4.1'):(process.env.OPENAI_MODEL||'gpt-4.1-mini'),input:[{role:'system',content:prompt},{role:'user',content:'請生成一道有趣而準確的題目。'}],text:{format:{type:'json_schema',name:'couple_quiz',strict:true,schema}},max_output_tokens:1200};
-  if(news){payload.tools=[{type:'web_search',search_context_size:'medium'}];payload.tool_choice='required'}
-  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),26000);
-  try {
-    const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+apiKey(),'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
-    const data=await res.json();
-    if(!res.ok) fail(502,'AI 暫時無法出題：'+str(data?.error?.message||res.status,200));
-    const output=(data.output||[]).filter(x=>x.type==='message').flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join('');
-    let result;try{result=JSON.parse(output)}catch{fail(502,'AI 未產生有效題目，請再試一次')}
-    const q=validateQuestion({...result,topic,origin:'ai'});
-    if(news&&!q.source_url)fail(502,'時事題沒有可核實的新聞來源，請重新生成');
-    return q;
-  } catch(e) {
-    if(e.name==='AbortError') fail(504,'AI 產生題目逾時，請重新嘗試');
-    if(e instanceof ApiError) throw e;
-    fail(502,'AI 服務暫時不可用');
-  } finally {clearTimeout(timer)}
+async function generateForRoom(request) {
+  const body = await readBody(request);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) fail(400,'AI 出題設定格式不正確');
+  const legacy = body.count === undefined && body.type === undefined && body.style === undefined;
+  const topic = CATEGORIES.has(body.topic) ? body.topic : 'science';
+  const count = body.count ?? 1;
+  const type = body.type ?? (topic === 'couple' ? 'open' : 'choice');
+  const level = legacy && !Object.hasOwn(LEVELS,body.level) ? 'light' : body.level ?? 'light';
+  const style = body.style ?? 'serious';
+  if (![1,5,10].includes(count) || !['open','choice'].includes(type) ||
+      !Object.hasOwn(LEVELS,level) || !Object.hasOwn(STYLES,style) ||
+      (!legacy && body.topic !== undefined && !CATEGORIES.has(body.topic))) fail(400,'AI 出題設定不正確');
+
+  const code = str(body.room,12).toUpperCase();
+  const { payload:room } = await load(code);
+  auth(request,room);
+  if (!apiKey()) fail(503,'AI 出題尚未啟用，請先使用內建題庫。');
+  const reservation = await supabase('POST','',{room_code:code,question_count:count},{},'rpc/reserve_quiz_ai');
+  if (reservation === 'cooldown') fail(429,'這個房間剛生成過題目，請等待約 40 秒再試。');
+  if (reservation === 'room_limit') fail(429,'這間房間已達今日 AI 題數上限（30 題），請先使用內建題庫。');
+  if (reservation === 'global_limit') fail(429,'全站已達今日 AI 題數上限，請先使用內建題庫。');
+  if (reservation !== 'ok') fail(503,'AI 用量服務暫時無法使用。');
+
+  const clientRecent = Array.isArray(body.recent) ?
+    body.recent.slice(0,30).filter(x=>typeof x==='string'&&x.length<=300) : [];
+  const excluded = [
+    ...bank.filter(q=>q.topic===topic).map(q=>q.question),
+    ...room.history.map(q=>q.question),
+    ...(room.current ? [room.current.question] : []),
+    ...clientRecent
+  ];
+  const questions = await generateAI({topic,count,type,level,style,keywords:str(body.keywords,150)},excluded);
+  // The first question keeps the existing response shape for older clients.
+  const { reviewState, ...legacyQuestion } = questions[0];
+  return json({question:legacy ? legacyQuestion : questions[0],questions});
 }
 
 export async function handleApi(request) {
@@ -255,22 +282,10 @@ export async function handleApi(request) {
       }
       fail(404,'未知房間操作');
     }
-    if(method==='POST'&&p==='/api/ai') {
-      const body=await readBody(request);
-      const code=str(body.room,12).toUpperCase();
-      const {room}=await mutate(code,r=>{
-        auth(request,r);
-        if((r.aiCalls||0)>=30)fail(429,'本房間已達 AI 試玩上限（30 題）');
-        r.aiCalls=(r.aiCalls||0)+1;
-      });
-      const topic=CATEGORIES.has(body.topic)?body.topic:'science';
-      const level=['light','medium','hard'].includes(body.level)?body.level:'light';
-      const q=await generateAI(topic,level,str(body.keywords,150));
-      return json({question:q});
-    }
+    if(method==='POST'&&p==='/api/ai') return await generateForRoom(request);
     fail(404,'找不到 API 路徑');
   } catch(e) {
-    const code=e instanceof ApiError?e.status:500;
+    const code=e instanceof ApiError || e instanceof AIError ? e.status : 500;
     if(code===500)console.error('[問問星球 API]',method,p,e?.message||'internal error');
     return json({error:code===500?'伺服器出現問題，請稍後再試':e.message},code);
   }
