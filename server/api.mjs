@@ -3,6 +3,7 @@ import { ApiError, fail, readBody, str, UUID } from './http.mjs';
 import { builtInDrafts, TOPICS, validOptions } from './rules.mjs';
 import { getRoomQuestions, handleLibrary } from './library.mjs';
 import { handleChallenge } from './challenges.mjs';
+import { backendConfig } from './deployment.mjs';
 import { LEVELS, safeSourceUrl, STYLES, validDate } from '../public/question-tools.js';
 
 const ROOM_TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -16,10 +17,10 @@ const API_HEADERS = {
 
 const now = () => Date.now();
 const json = (data,status=200) => Response.json(data,{status,headers:API_HEADERS});
-const ready = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
+const ready = () => Boolean(backendConfig().url && backendConfig().key);
 const generatorFlags = () => ({aiEnabled:ready(), ruleGeneration:true, localAiEnabled:process.env.ENABLE_LOCAL_AI==='true'});
-const BASE = () => String(process.env.SUPABASE_URL || '').replace(/\/$/,'');
-const SECRET = () => String(process.env.SUPABASE_SECRET_KEY || '');
+const BASE = () => String(backendConfig().url || '').replace(/\/$/,'');
+const SECRET = () => String(backendConfig().key || '');
 
 function roomCode() {
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -184,9 +185,10 @@ export async function handleApi(request) {
   const url=new URL(request.url),p=url.pathname,method=request.method.toUpperCase();
   try {
     if(method==='GET'&&p==='/api/health') {
-      if(!ready())return json({ok:true,onlineReady:false,...generatorFlags(),message:'尚未設定 Supabase 環境變數'});
+      const deploymentContext=backendConfig().name;
+      if(!ready())return json({ok:true,onlineReady:false,deploymentContext,...generatorFlags(),message:'尚未設定此環境的 Supabase 連線'});
       await supabase('GET','?select=code&limit=1');
-      return json({ok:true,onlineReady:true,...generatorFlags(),message:'雙人服務已就緒'});
+      return json({ok:true,onlineReady:true,deploymentContext,...generatorFlags(),message:'雙人服務已就緒'});
     }
     if(method==='POST'&&p==='/api/rooms') {
       const body=await readBody(request);

@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { fromBuffer } from 'yauzl';
 import { SaxesParser } from 'saxes';
 import { ApiError, fail } from './http.mjs';
+import { backendConfig } from './deployment.mjs';
 
 export const BUCKET = 'wenwen-documents-v4';
 export const MAX_FILE = 3 * 1024 * 1024;
@@ -173,8 +174,8 @@ export function objectKey(code, id) {
 }
 
 export async function storageRequest(action, key, bytes, media) {
-  const base = process.env.SUPABASE_URL.replace(/\/$/, '');
-  const secret = process.env.SUPABASE_SECRET_KEY;
+  const { url, key: secret } = backendConfig();
+  const base = url.replace(/\/$/, '');
   const extension = action === 'delete' ? BUCKET : `${BUCKET}/${key}`;
   const path = action === 'get' ? `object/authenticated/${extension}` : `object/${extension}`;
   const method = { get: 'GET', save: 'POST', delete: 'DELETE' }[action];

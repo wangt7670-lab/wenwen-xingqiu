@@ -27,8 +27,10 @@
    npm run dev 會先打包前端資產，再啟動 Netlify Dev。
 2. 獨立 Supabase 環境先執行 supabase/schema.sql，再套用
    supabase/migrations/20261120020000_v4_library.sql。遷移只新增題庫、文件、闖關和私有 bucket。
-3. 在 Netlify 設定 Functions 的 SUPABASE_URL 及 SUPABASE_SECRET_KEY。預覽與正式環境
-   使用不同的 Supabase 專案。設定預覽變數後分別核對專案識別碼，再開放測試連線。
+3. 在 Netlify 為正式 Functions 設定 SUPABASE_URL 及 SUPABASE_SECRET_KEY。
+   Deploy Preview 使用 PREVIEW_SUPABASE_URL 及 PREVIEW_SUPABASE_SECRET_KEY，
+   並需要 PRODUCTION_SUPABASE_HOST 指定正式庫網域，用來檢查預覽庫與正式庫不同。
+   預覽變數未齊備時，可驗證前端與 Functions 部署，雙人及儲存功能會維持離線。
    OpenAI API 金鑰已無需配置。除非自行驗收本地模型，ENABLE_LOCAL_AI 保持 false。
 4. 先在預覽做兩位玩家的跨房、跨玩家、刪除及續玩測試。檢查正式站歷史機密掃描警報
    及金鑰作用範圍；確認正式庫備份和專案識別碼後，再套用正式庫遷移及發布 Git 版本。
