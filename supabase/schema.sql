@@ -11,7 +11,8 @@ create table if not exists public.quiz_rooms (
 
 create index if not exists quiz_rooms_expiry_idx on public.quiz_rooms(expires_at);
 alter table public.quiz_rooms enable row level security;
-revoke all on table public.quiz_rooms from anon, authenticated;
+revoke all on table public.quiz_rooms from public, anon, authenticated;
+grant select, insert, update on table public.quiz_rooms to service_role;
 -- No RLS policies for anon/authenticated: browsers cannot read the rooms.
 -- `sb_secret_...` is server-side ONLY and bypasses RLS.
 
