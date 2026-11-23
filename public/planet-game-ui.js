@@ -45,12 +45,9 @@ export function mountPlanetGame({ panel, visible, session, room, request, invite
       return;
     }
     if (!game || game.completed) {
-      const choices = Object.entries(gameModes).map(([id, label]) =>
-        `<option value="${id}" ${id === selected ? 'selected' : ''}>${label}</option>`).join('');
       const levels = [0, 1, 2, 3].map(level => `<option value="${level}" ${level === difficulty ? 'selected' : ''}>${level ? '難度 ' + level : '所有難度'}</option>`).join('');
       gamePanel.innerHTML = `${game?.completed ? `<p>本局已結束。${game.mode === 'quiz' ? scores() : ''}</p>` : ''}
         <form id="planet-start" class="planet-form">
-          <label>玩法 <select name="mode">${choices}</select></label>
           ${selected === 'quiz' ? `<label>難度 <select name="difficulty">${levels}</select></label>` : ''}
           <label>每局最多幾題 <input type="number" min="1" max="10" required name="count" value="${count}"></label>
           <button class="button primary" type="submit">開始遊戲</button>
@@ -200,7 +197,6 @@ export function mountPlanetGame({ panel, visible, session, room, request, invite
     if (target.id === 'planet-kind') switchKind(target.value);
     if (target.name === 'count') count = target.valueAsNumber || 10;
     if (target.name === 'difficulty') difficulty = Number(target.value);
-    if (target.name === 'mode') { selected = target.value; draw(); }
   });
   panel.addEventListener('submit', event => {
     event.preventDefault();

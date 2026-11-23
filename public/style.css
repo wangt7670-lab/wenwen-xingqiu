@@ -44,6 +44,8 @@
 #planet-submit textarea { width: 100%; min-height: 90px; resize: vertical; }
 #planet-board { overflow-wrap: anywhere; }
 .planet-meta, [data-planet-clock] { font-size: .9rem; }
+#play-game-title { margin: 0; }
+.play-picker { margin-top: 14px; }
 
 .word-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(4px, 1.6vw, 14px); margin-block: 14px; }
 .word-cards > div { min-width: 0; display: grid; align-content: start; gap: 4px; background: #f6efff; border: 1px solid var(--line); border-radius: 12px; padding: clamp(4px, 1.4vw, 12px); text-align: center; overflow-wrap: anywhere; }
