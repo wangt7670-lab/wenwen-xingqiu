@@ -3,6 +3,7 @@ import { ApiError, fail, readBody, str, UUID } from './http.mjs';
 import { builtInDrafts, TOPICS, validOptions } from './rules.mjs';
 import { getRoomQuestions, handleLibrary } from './library.mjs';
 import { handleChallenge } from './challenges.mjs';
+import { handlePlanetGame } from './planet-games.mjs';
 import { backendConfig } from './deployment.mjs';
 import { LEVELS, safeSourceUrl, STYLES, validDate } from '../public/question-tools.js';
 
@@ -195,12 +196,13 @@ export async function handleApi(request) {
       const {room,playerId,token:authToken}=await createRoom(str(body.name,16)||'我');
       return json({code:room.code,playerId,token:authToken,room:view(room,playerId),...generatorFlags()},201);
     }
-    const materials=p.match(/^\/api\/rooms\/([A-Z2-9]{8})\/(documents|library|challenge)(?:\/([a-zA-Z0-9-]{1,36}))?(?:\/([a-z]{1,12}))?$/);
+    const materials=p.match(/^\/api\/rooms\/([A-Z2-9]{8})\/(documents|library|challenge|planet-game)(?:\/([a-zA-Z0-9-]{1,36}))?(?:\/([a-z]{1,12}))?$/);
     if(materials) {
       const [,code,...parts]=materials;
       const {payload:room}=await load(code);
       const who=auth(request,room);
       const context={db:supabase,code,room,who,parts,validateQuestion};
+      if(parts[0]==='planet-game') return json(await handlePlanetGame(request,context));
       const result=parts[0]==='challenge' ? await handleChallenge(request,context) : await handleLibrary(request,context);
       return result instanceof Response ? result : json(result);
     }

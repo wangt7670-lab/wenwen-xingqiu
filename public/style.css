@@ -34,3 +34,13 @@
 .challenge-picker { display: grid; gap: 8px; max-height: 320px; overflow-y: auto; margin: 12px 0; }
 .challenge-picker label { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; background: #f7f3ff; overflow-wrap: anywhere; }
 #challenge-answer button { margin-top: 10px; }
+
+.planet-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-block: 12px; }
+.planet-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-block: 12px; }
+.planet-form label { display: grid; gap: 6px; font-weight: 650; }
+.planet-form select, .planet-form input, .planet-form textarea { font: inherit; color: inherit; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.planet-form input[type="number"] { width: 7rem; }
+#planet-submit { display: grid; justify-items: start; }
+#planet-submit textarea { width: 100%; min-height: 90px; resize: vertical; }
+#planet-board { overflow-wrap: anywhere; }
+.planet-meta, [data-planet-clock] { font-size: .9rem; }
