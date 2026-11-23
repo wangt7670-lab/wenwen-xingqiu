@@ -31,6 +31,7 @@
             <button class="button subtle" type="button" data-planet-entry="open">開放式</button>
             <button class="button subtle" type="button" data-planet-entry="yes_no">是／否</button>
             <button class="button subtle" type="button" data-planet-entry="quiz">腦筋急轉彎</button>
+            <button class="button subtle" type="button" id="hero-word">五詞故事卡</button>
           </div>
         </div>
         <div class="hero-art" aria-hidden="true">
@@ -54,6 +55,7 @@
         <button class="tab" data-tab="create" aria-selected="false">✎ 出題工坊</button>
         <button class="tab" data-tab="challenge" aria-selected="false">✦ 雙人闖關</button>
         <button class="tab" data-tab="planet" aria-selected="false">🧩 250 題玩法</button>
+        <button class="tab" data-tab="word" aria-selected="false">✎ 五詞故事卡</button>
         <button class="tab" data-tab="diary" aria-selected="false">◷ 我們的戰績</button>
       </nav>
 
@@ -96,6 +98,18 @@
           <p id="planet-connection" role="status"></p>
           <p id="planet-message" role="status"></p>
           <div id="planet-board"></div>
+        </div>
+      </section>
+
+      <section id="word-pane" class="pane" aria-label="五詞故事卡">
+        <div class="feature-card">
+          <h2>五詞故事卡</h2>
+          <div class="planet-form"><label>玩家裝置 <select id="word-scope"><option value="local">雙人共用一台裝置</option><option value="room">雙人房間故事接龍</option></select></label>
+            <a class="link-button" href="./wenwen_five_word_story_relay_v4.html" download>下載離線原型</a>
+          </div>
+          <p id="word-connection" role="status"></p>
+          <p id="word-message" role="status"></p>
+          <div id="word-board"></div>
         </div>
       </section>
 

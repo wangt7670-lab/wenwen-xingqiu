@@ -4,6 +4,7 @@ import { quickEditor, bankEditor, escape, readReview, reviewCard, sourceLink } f
 import { challengePanel, documentsPanel, libraryPanel } from './library.js';
 import { localAiAvailable, rewriteOnDevice } from './local-ai.js';
 import { mountPlanetGame } from './planet-game-ui.js';
+import { mountWordGame } from './five-word-ui.js';
 
 (()=>{'use strict';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -41,7 +42,7 @@ function notify(text){const wrap=$('#toast-wrap'),n=document.createElement('div'
 function beep(){ /* 靜音設計：沒有背景音樂或遊戲聲音 */ }
 function burst(){const el=$('#burst-layer'),cols=['#8b7ce9','#f3b09f','#f1d483','#adddca','#c8b7eb'];for(let i=0;i<42;i++){const n=document.createElement('i');n.className='confetti';n.style.left=Math.random()*100+'%';n.style.setProperty('--color',cols[i%5]);n.style.setProperty('--dur',(2.3+Math.random()*2.5)+'s');n.style.animationDelay=(Math.random()*.6)+'s';el.append(n);setTimeout(()=>n.remove(),5400)}}
 function todayQuestion(){const seed=Math.floor(new Date().setHours(0,0,0,0)/86400000);const arr=bank.filter(q=>q.topic==='couple');return arr[Math.abs(seed)%arr.length]}
-function setTab(next,gameMode){tab=next;$$('.tab').forEach(b=>{const a=b.dataset.tab===tab;b.classList.toggle('active',a);b.setAttribute('aria-selected',String(a))});$$('.pane').forEach(p=>p.classList.toggle('active',p.id===tab+'-pane'));if(tab==='create'){renderEditor();loadEditorArea()}if(tab==='challenge'){renderChallenge();refreshChallenge(true)}if(tab==='diary')renderDiary();if(tab==='planet')planetGame.open(gameMode);try{sessionStorage.setItem('wenwen-last-pane',tab)}catch{}window.scrollTo({top:Math.min(window.scrollY,520),behavior:'smooth'})}
+function setTab(next,gameMode){tab=next;$$('.tab').forEach(b=>{const a=b.dataset.tab===tab;b.classList.toggle('active',a);b.setAttribute('aria-selected',String(a))});$$('.pane').forEach(p=>p.classList.toggle('active',p.id===tab+'-pane'));if(tab==='create'){renderEditor();loadEditorArea()}if(tab==='challenge'){renderChallenge();refreshChallenge(true)}if(tab==='diary')renderDiary();if(tab==='planet')planetGame.open(gameMode);if(tab==='word')wordGame.open();try{sessionStorage.setItem('wenwen-last-pane',tab)}catch{}window.scrollTo({top:Math.min(window.scrollY,520),behavior:'smooth'})}
 function renderHeader(){const r=room(),a=r.players?.[0],b=r.players?.[1];$('#name-a').textContent=a?.name||'等待加入';$('#name-b').textContent=b?.name||'等待加入';$('#avatar-a').textContent=(a?.name||'我').slice(0,2);$('#avatar-b').textContent=(b?.name||'TA').slice(0,2);$('#score-name-a').textContent=a?.name||'我';$('#score-name-b').textContent=b?.name||'TA';$('#score-a').textContent=a?.score||0;$('#score-b').textContent=b?.score||0;let total=(a?.score||0)+(b?.score||0);$('#score-progress').style.width=(total?Math.max(7,Math.round((a?.score||0)/total*100)):50)+'%';$('#score-caption').textContent=total?'繼續出題，看看還會發現什麼':'第一個挑戰即將開始';$('#pair-state').textContent=mode==='online'? (r.players?.length===2?'你們已經連線，可以輪流出題':'等待另一半加入房間…') : ('目前由 '+player(me()).name+' 操作 · 可切換角色');$('#switch-person').style.display=mode==='online'?'none':'inline-flex';$('#switch-person').textContent='切換玩家 ↔'}
 function renderCats(){const wrap=$('#category-grid');wrap.innerHTML=CATS.map(c=>`<button class="category-card ${topic===c.id?'selected':''}" data-topic="${c.id}" aria-label="選擇${escape(c.name)}"><span class="cat-asterisk">✧</span><span class="cat-icon" style="--c:${c.color}">${c.emoji}</span><b>${escape(c.name)}</b><small>${escape(c.sub)}</small></button>`).join('')}
 function resultContent(q){if(q.type==='open')return `<div class="result-panel"><span class="result-tag">💭 完成簡答 · +5 星</span><h3>看看彼此的答案吧 ♡</h3><p><b>${escape(player(q.answerBy).name)}的回答：</b>${escape(q.answerText||'已回覆')}</p>${q.referenceAnswer?`<p class="reference-answer"><b>出題者的參考答案：</b>${escape(q.referenceAnswer)}</p>`:''}<p>${escape(q.explanation||'答案沒有自動判對錯，先聊聊你們的想法吧。')}</p>${sourceLink(q)}</div>`;return `<div class="result-panel ${q.isCorrect?'correct':'wrong'}"><span class="result-tag">${q.isCorrect?'✦ 回答正確 · +10 星星':'✧ 差一點點 · 下次再挑戰'}</span><h3>${q.isCorrect?'好厲害！這顆知識星星是你的。':'猜錯也沒關係，收下今天的新知識！'}</h3><p><b>正確答案：</b>${escape(q.options[q.answerIndex]||'')}</p><p>${escape(q.explanation||'')}</p>${sourceLink(q)}</div>`}
@@ -209,7 +210,7 @@ async function refreshOnline() {
   }
  }
 }
-function startPolling(){clearInterval(poll);poll=setInterval(()=>{if(mode==='online'&&session){refreshOnline();planetGame.refresh()}},2200)}
+function startPolling(){clearInterval(poll);poll=setInterval(()=>{if(mode==='online'&&session){refreshOnline();planetGame.refresh();wordGame.refresh()}},2200)}
 function refreshStudioContext() {
  draft=null;
  editingId=null;
@@ -218,6 +219,7 @@ function refreshStudioContext() {
  if(tab==='create'){renderEditor();loadEditorArea()}
  if(tab==='challenge'){renderChallenge();refreshChallenge(true)}
  if(tab==='planet')planetGame.open(undefined,true);
+ if(tab==='word')wordGame.open();
 }
 function leaveOnline(){clearInterval(poll);mode='demo';session=null;online=null;connected=false;localAiEnabled=false;saveSession();refreshStudioContext();renderAll()}
 function connectRoom(s,data){session={room:data.code,playerId:data.playerId,token:data.token};saveSession();mode='online';connected=true;online=data.room;localAiEnabled=data.localAiEnabled===true;startPolling();hideDialog();beep('win');refreshStudioContext();renderAll()}
@@ -598,10 +600,17 @@ async function handleChallengeSubmit(event) {
 const planetGame=mountPlanetGame({
  panel:$('#planet-pane'),visible:()=>tab==='planet',session:()=>session,room,request:callApi,invite:showConnection
 });
-let resumePlanet=false;
-try{resumePlanet=sessionStorage.getItem('wenwen-last-pane')==='planet'}catch{}
+const wordGame=mountWordGame({
+ panel:$('#word-pane'),visible:()=>tab==='word',session:()=>session,room,request:callApi,invite:showConnection
+});
+let resumedPane;
+try{resumedPane=sessionStorage.getItem('wenwen-last-pane')}catch{}
 init();
-if(resumePlanet)setTab('planet');
+if(['planet','word'].includes(resumedPane))setTab(resumedPane);
+$('#hero-word').onclick=()=>{
+ setTab('word');
+ $('#word-pane').scrollIntoView({block:'start'});
+};
 for(const entry of $$('[data-planet-entry]'))entry.onclick=()=>{
  setTab('planet',entry.dataset.planetEntry);
  $('#planet-pane').scrollIntoView({block:'start'});

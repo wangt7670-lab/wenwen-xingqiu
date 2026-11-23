@@ -5,7 +5,7 @@ import { BUCKET } from '../server/documents.mjs';
 
 const origin = 'https://isolated-db.example';
 const secret = 'sb_secret_testing_only';
-const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges','quiz_planet_games','quiz_planet_questions'].map(name => [name, new Map()]));
+const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges','quiz_planet_games','quiz_planet_questions','quiz_word_games'].map(name => [name, new Map()]));
 const blobs = new Map();
 const fetchBefore = globalThis.fetch;
 const envBefore = { ...process.env };
@@ -99,6 +99,44 @@ async function call(path, { method = 'GET', body, raw, filename, token } = {}) {
 }
 
 const post = (path, token, body) => call(path, {method:'POST',token,body});
+
+test('story relay requires both consents, serializes drawing and reviews, and clears only the relay', async () => {
+  const {a,b,path} = await pair();
+  const outsider = await pair();
+  const endpoint = path+'/word-game';
+  const originalRoom = (await call(path,{token:a.token})).room;
+  assert.equal((await call(endpoint,{token:outsider.a.token})).status,403);
+  assert.equal((await call(endpoint)).status,401);
+  const settings = { version:0, mode:'relay', theme:'甜蜜', total:4, agree:true };
+  assert.equal((await post(endpoint+'/setup',b.token,settings)).status,403);
+  let result = await post(endpoint+'/setup',a.token,settings);
+  const args = () => ({ version:result.version, id:result.game.id, turn:result.game.turns.length });
+  assert.equal(result.game.turns.length,0);
+  assert.equal((await post(endpoint+'/start',a.token,args())).status,409);
+  result = await post(endpoint+'/consent',b.token,{...args(),agree:true});
+  const race = await Promise.all([post(endpoint+'/start',a.token,args()),post(endpoint+'/start',a.token,args())]);
+  assert.deepEqual(race.map(r=>r.status).sort(),[200,409]);
+  result = race.find(r=>r.status===200);
+  assert.deepEqual((await call(endpoint,{token:b.token})).game,result.game);
+  const cards = result.game.turns[0].cards.map(card=>card.id);
+  assert.equal((await post(endpoint+'/submit',b.token,{...args(),format:'text',text:'wrong player'})).status,409);
+  result = await post(endpoint+'/submit',a.token,{...args(),format:'oral',text:''});
+  const review = {...args(),words:cards,bonus:5};
+  assert.equal((await post(endpoint+'/score',a.token,review)).status,409);
+  assert.equal((await post(endpoint+'/submit',a.token,{...args(),format:'text',text:'overwrite'})).status,409);
+  result = await post(endpoint+'/score',b.token,review);
+  assert.equal(result.game.scores[a.playerId],15);
+  assert.equal((await post(endpoint+'/score',b.token,review)).status,409);
+  const next = args();
+  result = await post(endpoint+'/next',b.token,next);
+  assert.equal((await post(endpoint+'/next',b.token,next)).status,409);
+  assert.equal(result.game.turns[1].writer,b.playerId);
+  assert.ok(result.game.turns[1].cards.every(card=>!cards.includes(card.id)));
+  const cleared = await post(endpoint+'/clear',b.token,args());
+  assert.ok(cleared.version>result.version);
+  assert.equal((await call(endpoint,{token:a.token})).game,null);
+  assert.deepEqual((await call(path,{token:a.token})).room,originalRoom);
+});
 
 async function pair() {
   const a = await post('/api/rooms',null,{name:'Alpha'});
