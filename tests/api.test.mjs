@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test, before, after } from 'node:test';
 import { handleApi } from '../server/api.mjs';
 import { BUCKET } from '../server/documents.mjs';
+import { changeWordGame } from '../public/five-word-game.js';
 
 const origin = 'https://isolated-db.example';
 const secret = 'sb_secret_testing_only';
@@ -51,6 +52,17 @@ async function mockSupabase(url, { method, headers, body }) {
     if ([...questions.values()].some(item => item.room_code === q.room_code && item.fingerprint === q.fingerprint)) return Response.json('duplicate');
     questions.set(q.id, { ...q, created_at: new Date().toISOString() });
     return Response.json('ok');
+  }
+  if (path === 'rpc/draw_quiz_word_turn') {
+    const games = tables.get('quiz_word_games');
+    const row = games.get(data.p_room_code);
+    if (row?.version !== data.p_version) return Response.json([]);
+    try {
+      const state = changeWordGame(row.state,data.p_action,{id:data.p_game_id,turn:data.p_turn},data.p_player,data.p_catalog,Date.now());
+      const updated = {...row,version:row.version+1,state};
+      games.set(data.p_room_code,updated);
+      return Response.json([updated]);
+    } catch { return Response.json([]); }
   }
   const rows = tables.get(path);
   assert.ok(rows, path);

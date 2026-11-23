@@ -19,6 +19,13 @@ export async function handleWordGame(request, { db, room, who, parts }) {
 
   const input = await readBody(request);
   if (input.version !== version) fail(409, '另一位玩家已更新，請確認最新進度。');
+  if (action === 'start' || action === 'next') {
+    if (typeof input.id !== 'string' || !Number.isInteger(input.turn)) fail(400, '無效的接龍回合。');
+    const [drawn] = await db('POST', '', { p_room_code: room.code, p_version: version,
+      p_game_id: input.id, p_turn: input.turn, p_player: who.id, p_action: action, p_catalog: catalog }, {}, 'rpc/draw_quiz_word_turn');
+    if (!drawn) fail(409, '目前不能抽卡，請確認玩家、回合與最新進度。');
+    return { version: Number(drawn.version), game: drawn.state };
+  }
   let state;
   try {
     if (action === 'setup') {
