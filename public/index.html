@@ -27,6 +27,11 @@
           <h1>距離很遠，<br><em>好奇心</em>卻可以很近。</h1>
           <p>你問一題、我答一題。從戀愛裡的小秘密，到宇宙裡的大問題，讓每次聊天都有新的發現。</p>
           <div class="hero-actions"><button class="button primary" id="hero-start">開始出一道題 <span>↗</span></button><button class="button text-button" id="hero-join">邀請另一半 <span>→</span></button></div>
+          <div class="planet-actions" role="group" aria-label="250 題玩法">
+            <button class="button subtle" type="button" data-planet-entry="open">開放式</button>
+            <button class="button subtle" type="button" data-planet-entry="yes_no">是／否</button>
+            <button class="button subtle" type="button" data-planet-entry="quiz">腦筋急轉彎</button>
+          </div>
         </div>
         <div class="hero-art" aria-hidden="true">
           <div class="constellation dot-a">✦</div><div class="constellation dot-b">✧</div><div class="constellation dot-c">✳</div>
@@ -48,6 +53,7 @@
         <button class="tab active" data-tab="play" aria-selected="true">✦ 一起玩</button>
         <button class="tab" data-tab="create" aria-selected="false">✎ 出題工坊</button>
         <button class="tab" data-tab="challenge" aria-selected="false">✦ 雙人闖關</button>
+        <button class="tab" data-tab="planet" aria-selected="false">🧩 250 題玩法</button>
         <button class="tab" data-tab="diary" aria-selected="false">◷ 我們的戰績</button>
       </nav>
 
@@ -80,6 +86,18 @@
       <div id="challenge-pane" class="pane">
         <div id="challenge-content" class="feature-card"></div>
       </div>
+
+      <section id="planet-pane" class="pane" aria-label="250 題玩法">
+        <div class="feature-card">
+          <h2>250 題玩法</h2>
+          <div id="planet-controls" class="planet-form">
+            <label>玩家 <select id="planet-kind"><option value="solo">單人</option><option value="pair">雙人房間</option></select></label>
+          </div>
+          <p id="planet-connection" role="status"></p>
+          <p id="planet-message" role="status"></p>
+          <div id="planet-board"></div>
+        </div>
+      </section>
 
       <div id="diary-pane" class="pane">
         <div class="section-heading"><div><span class="eyebrow dark">LITTLE DISCOVERIES</span><h2>我們的好奇心足跡</h2><p>記下答對的知識，以及每一次認真交換的想法。</p></div></div>

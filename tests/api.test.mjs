@@ -5,7 +5,7 @@ import { BUCKET } from '../server/documents.mjs';
 
 const origin = 'https://isolated-db.example';
 const secret = 'sb_secret_testing_only';
-const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges'].map(name => [name, new Map()]));
+const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges','quiz_planet_games','quiz_planet_questions'].map(name => [name, new Map()]));
 const blobs = new Map();
 const fetchBefore = globalThis.fetch;
 const envBefore = { ...process.env };
@@ -240,4 +240,43 @@ test('challenge is versioned, alternates turns, resumes and records points indep
   assert.equal(result.challenge.scores[a.playerId],20);
   assert.equal(result.challenge.scores[b.playerId],10);
   assert.equal((await call(path,{token:a.token})).room.players[0].score,0);
+});
+
+test('250-card room rounds hide both answers until simultaneous submissions and keep legacy records', async () => {
+  const {a,b,path} = await pair();
+  const foreign = await pair();
+  const endpoint = path+'/planet-game';
+  const roomBefore = (await call(path,{token:a.token})).room;
+  const card = { id:'Q001', answer_type:'quiz', question:'Cloud quiz probe', default_enabled:true,
+    sensitivity:'low', correct_answer:' four ', explanation:'Reason', difficulty:1, points:10, time_limit_seconds:20 };
+  tables.get('quiz_planet_questions').set(card.id,{id:card.id,answer_type:'quiz',content:card});
+  assert.equal((await call(endpoint,{token:foreign.a.token})).status,403);
+  const started = await post(endpoint+'/start',a.token,{mode:'quiz',difficulty:1,count:1});
+  assert.equal(started.status,200);
+  assert.equal(started.game.correctAnswer,undefined);
+  const turn = {id:started.game.id,step:0};
+  assert.equal((await post(endpoint+'/next',a.token,turn)).status,409);
+  assert.equal((await post(endpoint+'/rate',b.token,{...turn,correct:true})).status,409);
+  const submissions = await Promise.all([
+    post(endpoint+'/submit',a.token,{...turn,text:'four'}),
+    post(endpoint+'/submit',b.token,{...turn,text:'四個'})
+  ]);
+  assert.ok(submissions.every(response=>response.status===200));
+  const earlier = submissions.find(result=>!result.game.revealed);
+  assert.ok(earlier);
+  assert.equal(earlier.game.entries,undefined);
+  assert.equal(earlier.game.explanation,undefined);
+  const revealed = await call(endpoint,{token:a.token});
+  assert.equal(revealed.game.entries[b.playerId].text,'四個');
+  assert.equal(revealed.game.correctAnswer,card.correct_answer);
+  assert.equal((await post(endpoint+'/submit',a.token,{...turn,text:'again'})).status,409);
+  assert.equal((await post(endpoint+'/next',a.token,turn)).status,409);
+  for(const [player,correct] of [[a,true],[b,false],[b,true],[b,true]]) {
+    assert.equal((await post(endpoint+'/rate',player.token,{...turn,correct})).status,200);
+  }
+  const completed = await post(endpoint+'/next',b.token,turn);
+  assert.equal(completed.game.completed,true);
+  assert.deepEqual(completed.game.scores,{[a.playerId]:10,[b.playerId]:10});
+  assert.deepEqual((await call(path,{token:a.token})).room,roomBefore);
+  assert.equal((await post(endpoint+'/start',a.token,{mode:'quiz',difficulty:1,count:1,previousId:turn.id})).status,422);
 });
