@@ -1,0 +1,1159 @@
+{
+  "schema_version": "1.1",
+  "game_id": "five_word_story",
+  "game_name": "五詞故事卡 · 故事接龍",
+  "description": "三種模式：五詞造句、五詞故事、故事接龍。每棒從人物/地點/物品/動作/轉折各抽1張；接龍模式A/B輪流延續上一棒的情節。",
+  "categories": [
+    "人物",
+    "地點",
+    "物品",
+    "動作",
+    "轉折"
+  ],
+  "themes": [
+    "甜蜜",
+    "搞笑",
+    "奇幻",
+    "混搭"
+  ],
+  "modes": {
+    "sentence": {
+      "title": "五詞造句",
+      "recommended_seconds": 60,
+      "rule": "用抽到的5個詞造一個完整句子，可自由調整詞序。"
+    },
+    "story": {
+      "title": "五詞故事",
+      "recommended_seconds": 180,
+      "rule": "把5個詞串成有開頭、發展與結尾的故事，可口述或輸入。"
+    },
+    "relay": {
+      "title": "故事接龍",
+      "recommended_seconds_per_turn": 120,
+      "default_turns": 4,
+      "allowed_turns": [
+        4,
+        6,
+        8
+      ],
+      "rule": "玩家A先起頭，每棒抽全新5張卡；下一位玩家必須接續此前故事，不可另起爐灶；最後一棒為故事結尾。全詞使用判定按本棒抽到的新卡，上一棒卡牌不算本棒任務。"
+    }
+  },
+  "answer_policy": {
+    "correct_answer": null,
+    "require_all_five_words": true,
+    "allowed_order": "any",
+    "text_check": "contains each exact drawn word as substring; only a completeness aid, not a creativity score",
+    "oral_mode": "partner manually confirms use of all five words",
+    "judge": "partner gives 0, 3 or 5 bonus points; creativity must not be automatically judged"
+  },
+  "score_policy": {
+    "all_five_words_points": 10,
+    "partner_bonus_options": [
+      0,
+      3,
+      5
+    ],
+    "max_points_per_round": 15
+  },
+  "cards": [
+    {
+      "id": "WC1101",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "小熊"
+    },
+    {
+      "id": "WC1102",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "戀人"
+    },
+    {
+      "id": "WC1103",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "橘貓"
+    },
+    {
+      "id": "WC1104",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "小王子"
+    },
+    {
+      "id": "WC1105",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "宇航員"
+    },
+    {
+      "id": "WC1106",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "咖啡師"
+    },
+    {
+      "id": "WC1107",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "畫家"
+    },
+    {
+      "id": "WC1108",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "企鵝"
+    },
+    {
+      "id": "WC1109",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "旅人"
+    },
+    {
+      "id": "WC1110",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "魔術師"
+    },
+    {
+      "id": "WC1111",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "小老虎"
+    },
+    {
+      "id": "WC1112",
+      "theme": "甜蜜",
+      "category": "人物",
+      "word": "麵包師"
+    },
+    {
+      "id": "WC1201",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "海邊"
+    },
+    {
+      "id": "WC1202",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "天台"
+    },
+    {
+      "id": "WC1203",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "摩天輪"
+    },
+    {
+      "id": "WC1204",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "書店"
+    },
+    {
+      "id": "WC1205",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "電影院"
+    },
+    {
+      "id": "WC1206",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "火車站"
+    },
+    {
+      "id": "WC1207",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "咖啡館"
+    },
+    {
+      "id": "WC1208",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "花店"
+    },
+    {
+      "id": "WC1209",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "公園"
+    },
+    {
+      "id": "WC1210",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "博物館"
+    },
+    {
+      "id": "WC1211",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "廚房"
+    },
+    {
+      "id": "WC1212",
+      "theme": "甜蜜",
+      "category": "地點",
+      "word": "夜市"
+    },
+    {
+      "id": "WC1301",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "奶茶"
+    },
+    {
+      "id": "WC1302",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "情書"
+    },
+    {
+      "id": "WC1303",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "相機"
+    },
+    {
+      "id": "WC1304",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "紙飛機"
+    },
+    {
+      "id": "WC1305",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "圍巾"
+    },
+    {
+      "id": "WC1306",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "生日蛋糕"
+    },
+    {
+      "id": "WC1307",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "拍立得"
+    },
+    {
+      "id": "WC1308",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "糖果"
+    },
+    {
+      "id": "WC1309",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "指南針"
+    },
+    {
+      "id": "WC1310",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "雨傘"
+    },
+    {
+      "id": "WC1311",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "便當"
+    },
+    {
+      "id": "WC1312",
+      "theme": "甜蜜",
+      "category": "物品",
+      "word": "明信片"
+    },
+    {
+      "id": "WC1401",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "告白"
+    },
+    {
+      "id": "WC1402",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "牽手"
+    },
+    {
+      "id": "WC1403",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "迷路"
+    },
+    {
+      "id": "WC1404",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "送花"
+    },
+    {
+      "id": "WC1405",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "躲雨"
+    },
+    {
+      "id": "WC1406",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "打噴嚏"
+    },
+    {
+      "id": "WC1407",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "跳舞"
+    },
+    {
+      "id": "WC1408",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "合照"
+    },
+    {
+      "id": "WC1409",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "唱歌"
+    },
+    {
+      "id": "WC1410",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "擁抱"
+    },
+    {
+      "id": "WC1411",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "寫信"
+    },
+    {
+      "id": "WC1412",
+      "theme": "甜蜜",
+      "category": "動作",
+      "word": "追公車"
+    },
+    {
+      "id": "WC1501",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "忽然停電"
+    },
+    {
+      "id": "WC1502",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "時間倒流"
+    },
+    {
+      "id": "WC1503",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "下起流星雨"
+    },
+    {
+      "id": "WC1504",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "全城靜音"
+    },
+    {
+      "id": "WC1505",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "收到神秘短信"
+    },
+    {
+      "id": "WC1506",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "開始倒計時"
+    },
+    {
+      "id": "WC1507",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "被誤認為明星"
+    },
+    {
+      "id": "WC1508",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "遇見十年後的自己"
+    },
+    {
+      "id": "WC1509",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "手機突然沒電"
+    },
+    {
+      "id": "WC1510",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "走錯出口"
+    },
+    {
+      "id": "WC1511",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "所有人鼓掌"
+    },
+    {
+      "id": "WC1512",
+      "theme": "甜蜜",
+      "category": "轉折",
+      "word": "電梯停在神秘樓層"
+    },
+    {
+      "id": "WC2101",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "一隻鵝"
+    },
+    {
+      "id": "WC2102",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "禿頭國王"
+    },
+    {
+      "id": "WC2103",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "打工企鵝"
+    },
+    {
+      "id": "WC2104",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "失憶外星人"
+    },
+    {
+      "id": "WC2105",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "自戀河馬"
+    },
+    {
+      "id": "WC2106",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "小偷貓"
+    },
+    {
+      "id": "WC2107",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "泡麵大師"
+    },
+    {
+      "id": "WC2108",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "路痴導航員"
+    },
+    {
+      "id": "WC2109",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "社恐勇者"
+    },
+    {
+      "id": "WC2110",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "忘詞歌手"
+    },
+    {
+      "id": "WC2111",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "穿西裝的狗"
+    },
+    {
+      "id": "WC2112",
+      "theme": "搞笑",
+      "category": "人物",
+      "word": "懶惰忍者"
+    },
+    {
+      "id": "WC2201",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "火鍋店"
+    },
+    {
+      "id": "WC2202",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "廁所門口"
+    },
+    {
+      "id": "WC2203",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "相親現場"
+    },
+    {
+      "id": "WC2204",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "超市"
+    },
+    {
+      "id": "WC2205",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "公司會議室"
+    },
+    {
+      "id": "WC2206",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "地鐵站"
+    },
+    {
+      "id": "WC2207",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "婚禮現場"
+    },
+    {
+      "id": "WC2208",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "停車場"
+    },
+    {
+      "id": "WC2209",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "動物園"
+    },
+    {
+      "id": "WC2210",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "電梯裡"
+    },
+    {
+      "id": "WC2211",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "游泳池"
+    },
+    {
+      "id": "WC2212",
+      "theme": "搞笑",
+      "category": "地點",
+      "word": "月球夜市"
+    },
+    {
+      "id": "WC2301",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "拖鞋"
+    },
+    {
+      "id": "WC2302",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "馬桶刷"
+    },
+    {
+      "id": "WC2303",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "巨型飯勺"
+    },
+    {
+      "id": "WC2304",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "破洞襪子"
+    },
+    {
+      "id": "WC2305",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "假髮"
+    },
+    {
+      "id": "WC2306",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "會唱歌的電飯煲"
+    },
+    {
+      "id": "WC2307",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "泡麵"
+    },
+    {
+      "id": "WC2308",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "塑膠皇冠"
+    },
+    {
+      "id": "WC2309",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "氣球"
+    },
+    {
+      "id": "WC2310",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "伸縮雨傘"
+    },
+    {
+      "id": "WC2311",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "自拍桿"
+    },
+    {
+      "id": "WC2312",
+      "theme": "搞笑",
+      "category": "物品",
+      "word": "過期優惠券"
+    },
+    {
+      "id": "WC2401",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "放屁"
+    },
+    {
+      "id": "WC2402",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "假裝鎮定"
+    },
+    {
+      "id": "WC2403",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "跳廣場舞"
+    },
+    {
+      "id": "WC2404",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "背錯台詞"
+    },
+    {
+      "id": "WC2405",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "搶最後一塊肉"
+    },
+    {
+      "id": "WC2406",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "偷拍自己的背影"
+    },
+    {
+      "id": "WC2407",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "狂按電梯"
+    },
+    {
+      "id": "WC2408",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "搞錯名字"
+    },
+    {
+      "id": "WC2409",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "原地轉圈"
+    },
+    {
+      "id": "WC2410",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "吃醋"
+    },
+    {
+      "id": "WC2411",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "打嗝"
+    },
+    {
+      "id": "WC2412",
+      "theme": "搞笑",
+      "category": "動作",
+      "word": "假裝打電話"
+    },
+    {
+      "id": "WC2501",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "警報響了"
+    },
+    {
+      "id": "WC2502",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "全員開始合唱"
+    },
+    {
+      "id": "WC2503",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "所有人都穿反衣服"
+    },
+    {
+      "id": "WC2504",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "突然被選為店長"
+    },
+    {
+      "id": "WC2505",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "出現一隻會說話的雞"
+    },
+    {
+      "id": "WC2506",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "開始下麵條雨"
+    },
+    {
+      "id": "WC2507",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "電梯說要休假"
+    },
+    {
+      "id": "WC2508",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "老闆突然來了"
+    },
+    {
+      "id": "WC2509",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "所有手機同時響起"
+    },
+    {
+      "id": "WC2510",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "主角被當成吉祥物"
+    },
+    {
+      "id": "WC2511",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "比賽變成跳舞大賽"
+    },
+    {
+      "id": "WC2512",
+      "theme": "搞笑",
+      "category": "轉折",
+      "word": "大屏幕播放黑歷史"
+    },
+    {
+      "id": "WC3101",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "會魔法的狐狸"
+    },
+    {
+      "id": "WC3102",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "龍族公主"
+    },
+    {
+      "id": "WC3103",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "精靈郵差"
+    },
+    {
+      "id": "WC3104",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "時間旅行者"
+    },
+    {
+      "id": "WC3105",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "雲朵商人"
+    },
+    {
+      "id": "WC3106",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "沉睡的巨人"
+    },
+    {
+      "id": "WC3107",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "會占卜的貓"
+    },
+    {
+      "id": "WC3108",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "海底國王"
+    },
+    {
+      "id": "WC3109",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "見習巫師"
+    },
+    {
+      "id": "WC3110",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "月亮守衛"
+    },
+    {
+      "id": "WC3111",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "機器人詩人"
+    },
+    {
+      "id": "WC3112",
+      "theme": "奇幻",
+      "category": "人物",
+      "word": "迷路的幽靈"
+    },
+    {
+      "id": "WC3201",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "雲端圖書館"
+    },
+    {
+      "id": "WC3202",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "海底城市"
+    },
+    {
+      "id": "WC3203",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "時間隧道"
+    },
+    {
+      "id": "WC3204",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "會移動的城堡"
+    },
+    {
+      "id": "WC3205",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "月亮背面"
+    },
+    {
+      "id": "WC3206",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "魔法學校"
+    },
+    {
+      "id": "WC3207",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "長滿星星的森林"
+    },
+    {
+      "id": "WC3208",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "倒立小鎮"
+    },
+    {
+      "id": "WC3209",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "天空車站"
+    },
+    {
+      "id": "WC3210",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "巨龍山谷"
+    },
+    {
+      "id": "WC3211",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "沒有影子的街道"
+    },
+    {
+      "id": "WC3212",
+      "theme": "奇幻",
+      "category": "地點",
+      "word": "夢境市場"
+    },
+    {
+      "id": "WC3301",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "魔法鑰匙"
+    },
+    {
+      "id": "WC3302",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "會發光的蛋"
+    },
+    {
+      "id": "WC3303",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "隱形斗篷"
+    },
+    {
+      "id": "WC3304",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "說真話的鏡子"
+    },
+    {
+      "id": "WC3305",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "時間沙漏"
+    },
+    {
+      "id": "WC3306",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "會飛的行李箱"
+    },
+    {
+      "id": "WC3307",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "水晶蘋果"
+    },
+    {
+      "id": "WC3308",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "空白地圖"
+    },
+    {
+      "id": "WC3309",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "會唱歌的石頭"
+    },
+    {
+      "id": "WC3310",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "星光瓶"
+    },
+    {
+      "id": "WC3311",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "記憶膠囊"
+    },
+    {
+      "id": "WC3312",
+      "theme": "奇幻",
+      "category": "物品",
+      "word": "縮小藥水"
+    },
+    {
+      "id": "WC3401",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "施法"
+    },
+    {
+      "id": "WC3402",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "穿越"
+    },
+    {
+      "id": "WC3403",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "變身"
+    },
+    {
+      "id": "WC3404",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "偷偷交換身份"
+    },
+    {
+      "id": "WC3405",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "召喚風暴"
+    },
+    {
+      "id": "WC3406",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "解開封印"
+    },
+    {
+      "id": "WC3407",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "追逐流星"
+    },
+    {
+      "id": "WC3408",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "讀取記憶"
+    },
+    {
+      "id": "WC3409",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "打開傳送門"
+    },
+    {
+      "id": "WC3410",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "偷聽預言"
+    },
+    {
+      "id": "WC3411",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "拯救小龍"
+    },
+    {
+      "id": "WC3412",
+      "theme": "奇幻",
+      "category": "動作",
+      "word": "倒著走路"
+    },
+    {
+      "id": "WC3501",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "月亮突然消失"
+    },
+    {
+      "id": "WC3502",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "全世界忘記名字"
+    },
+    {
+      "id": "WC3503",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "王冠自己飛走了"
+    },
+    {
+      "id": "WC3504",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "時間停止三分鐘"
+    },
+    {
+      "id": "WC3505",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "大海變成汽水"
+    },
+    {
+      "id": "WC3506",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "影子開始說話"
+    },
+    {
+      "id": "WC3507",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "巨龍竟然怕黑"
+    },
+    {
+      "id": "WC3508",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "星星掉進口袋"
+    },
+    {
+      "id": "WC3509",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "城堡突然長腿"
+    },
+    {
+      "id": "WC3510",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "所有人變成小熊"
+    },
+    {
+      "id": "WC3511",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "預言寫錯了"
+    },
+    {
+      "id": "WC3512",
+      "theme": "奇幻",
+      "category": "轉折",
+      "word": "門後是另一個昨天"
+    }
+  ],
+  "relay_policy": {
+    "turn_order": [
+      "A",
+      "B"
+    ],
+    "first_turn": "opening",
+    "middle_turns": "continue",
+    "last_turn": "ending",
+    "shared_story": true,
+    "draw_new_five_cards_each_turn": true,
+    "all_five_words_required_for_base_points": true,
+    "each_turn_scored_individually": true,
+    "partner_confirms_continuity_and_awards_creativity_bonus": true,
+    "oral_summary_optional": "口頭內容不會錄音，可自行輸入簡短摘要供下一棒參考",
+    "export": "TXT 保存文字故事（口頭內容只保存用戶自填摘要）",
+    "no_ai_api": true,
+    "no_audio_recording": true
+  }
+}

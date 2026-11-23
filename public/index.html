@@ -26,7 +26,11 @@
           <div class="eyebrow"><span class="sparkle">✳</span> TWO MINDS, ONE UNIVERSE</div>
           <h1>距離很遠，<br><em>好奇心</em>卻可以很近。</h1>
           <p>你問一題、我答一題。從戀愛裡的小秘密，到宇宙裡的大問題，讓每次聊天都有新的發現。</p>
-          <div class="hero-actions"><button class="button primary" id="hero-start">開始出一道題 <span>↗</span></button><button class="button text-button" id="hero-join">邀請另一半 <span>→</span></button></div>
+          <div class="hero-actions">
+            <button class="button primary" id="hero-start">開始出一道題 <span>↗</span></button>
+            <button class="button text-button" id="hero-join">邀請另一半 <span>→</span></button>
+            <button class="button subtle" type="button" id="hero-word">五詞故事卡</button>
+          </div>
         </div>
         <div class="hero-art" aria-hidden="true">
           <div class="constellation dot-a">✦</div><div class="constellation dot-b">✧</div><div class="constellation dot-c">✳</div>
@@ -48,6 +52,7 @@
         <button class="tab active" data-tab="play" aria-selected="true">✦ 一起玩</button>
         <button class="tab" data-tab="create" aria-selected="false">✎ 出題工坊</button>
         <button class="tab" data-tab="challenge" aria-selected="false">✦ 雙人闖關</button>
+        <button class="tab" data-tab="word" aria-selected="false">✎ 五詞故事卡</button>
         <button class="tab" data-tab="diary" aria-selected="false">◷ 我們的戰績</button>
       </nav>
 
@@ -55,9 +60,23 @@
         <div class="section-heading"><div><span class="eyebrow dark">TODAY'S CONNECTION</span><h2>今天，想聊點什麼？</h2><p>選一顆小星球，開啟你們的下一場問答。</p></div><span class="date-sticker" id="today-date">TODAY ✷</span></div>
         <div class="category-grid" id="category-grid"></div>
         <div class="game-grid">
-          <section class="feature-card" id="game-card" aria-label="當前雙人問答">
-            <div class="feature-top"><span class="eyebrow dark">✦ THE TWO-PERSON CHALLENGE</span><span class="round-tag" id="turn-tag">等待第一道題</span></div>
+          <section class="feature-card" id="game-card" aria-labelledby="play-game-title">
+            <div class="feature-top"><h3 id="play-game-title">一起問答</h3><span class="round-tag" id="turn-tag">等待第一道題</span></div>
+            <div class="mode-pills play-picker" role="group" aria-label="一起玩題庫">
+              <button class="mode-pill active" type="button" id="play-original" aria-pressed="true" aria-controls="game-content">輪流出題</button>
+              <button class="mode-pill" type="button" data-planet-entry="open" aria-pressed="false" aria-controls="play-question-bank">開放式</button>
+              <button class="mode-pill" type="button" data-planet-entry="yes_no" aria-pressed="false" aria-controls="play-question-bank">是／否</button>
+              <button class="mode-pill" type="button" data-planet-entry="quiz" aria-pressed="false" aria-controls="play-question-bank">腦筋急轉彎</button>
+            </div>
             <div id="game-content"></div>
+            <section id="play-question-bank" aria-label="題庫作答" hidden>
+              <div id="planet-controls" class="planet-form">
+                <label>玩家 <select id="planet-kind"><option value="solo">單人</option><option value="pair">雙人房間</option></select></label>
+              </div>
+              <p id="planet-connection" role="status"></p>
+              <p id="planet-message" role="status"></p>
+              <div id="planet-board"></div>
+            </section>
           </section>
           <aside class="sidebar">
             <div class="side-card daily-card"><div class="side-card-icon">☀</div><span class="eyebrow dark">DAILY SPARK</span><h3>今日靈感一題</h3><p id="daily-question">如果你們今天可以交換一天的生活，最想體驗對方的哪個時刻？</p><button class="link-button" id="use-daily">拿這題問 TA ↗</button></div>
@@ -80,6 +99,18 @@
       <div id="challenge-pane" class="pane">
         <div id="challenge-content" class="feature-card"></div>
       </div>
+
+      <section id="word-pane" class="pane" aria-label="五詞故事卡">
+        <div class="feature-card">
+          <h2>五詞故事卡</h2>
+          <div class="planet-form"><label>玩家裝置 <select id="word-scope"><option value="local">雙人共用一台裝置</option><option value="room">雙人房間故事接龍</option></select></label>
+            <a class="link-button" href="./wenwen_five_word_story_relay_v4.html" download>下載離線原型</a>
+          </div>
+          <p id="word-connection" role="status"></p>
+          <p id="word-message" role="status"></p>
+          <div id="word-board"></div>
+        </div>
+      </section>
 
       <div id="diary-pane" class="pane">
         <div class="section-heading"><div><span class="eyebrow dark">LITTLE DISCOVERIES</span><h2>我們的好奇心足跡</h2><p>記下答對的知識，以及每一次認真交換的想法。</p></div></div>

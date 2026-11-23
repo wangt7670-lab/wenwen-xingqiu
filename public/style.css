@@ -34,3 +34,29 @@
 .challenge-picker { display: grid; gap: 8px; max-height: 320px; overflow-y: auto; margin: 12px 0; }
 .challenge-picker label { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; background: #f7f3ff; overflow-wrap: anywhere; }
 #challenge-answer button { margin-top: 10px; }
+
+.planet-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-block: 12px; }
+.planet-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-block: 12px; }
+.planet-form label { display: grid; gap: 6px; font-weight: 650; }
+.planet-form select, .planet-form input, .planet-form textarea { font: inherit; color: inherit; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.planet-form input[type="number"] { width: 7rem; }
+#planet-submit { display: grid; justify-items: start; }
+#planet-submit textarea { width: 100%; min-height: 90px; resize: vertical; }
+#planet-board { overflow-wrap: anywhere; }
+.planet-meta, [data-planet-clock] { font-size: .9rem; }
+#play-game-title { margin: 0; }
+.play-picker { margin-top: 14px; }
+
+.word-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(4px, 1.6vw, 14px); margin-block: 14px; }
+.word-cards > div { min-width: 0; display: grid; align-content: start; gap: 4px; background: #f6efff; border: 1px solid var(--line); border-radius: 12px; padding: clamp(4px, 1.4vw, 12px); text-align: center; overflow-wrap: anywhere; }
+.word-cards b { font-size: clamp(.76rem, 2.8vw, 1rem); line-height: 1.35; }
+.word-cards small { color: #584786; font-size: .69rem; }
+.word-writing { display: grid; gap: 10px; justify-items: start; margin-block: 12px; }
+.word-writing select, .word-writing textarea { font: inherit; color: inherit; padding: 8px; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; }
+.word-writing textarea { width: 100%; resize: vertical; }
+.word-writing fieldset { min-width: 0; max-width: 100%; border: 1px solid var(--line); border-radius: 12px; }
+label.word-check { display: flex; align-items: baseline; gap: 7px; }
+#word-board { overflow-wrap: anywhere; }
+#word-board blockquote { margin-inline: 0; padding-inline-start: 10px; border-inline-start: 3px solid #a48df1; white-space: pre-wrap; }
+.word-timeline ol { padding-inline-start: 1.4em; }
+.word-timeline li { padding-block: 6px; }
