@@ -122,7 +122,7 @@ function saveDesk(desk,key=deskKey()) {
 
 function renderEditor() {
  const body=$('#editor-content');
- $$('.mode-pill').forEach(button=>{
+ $$('#studio-mode-picker [data-mode]').forEach(button=>{
   const selected=button.dataset.mode===editorMode;
   button.classList.toggle('active',selected);
   button.setAttribute('aria-pressed',String(selected));
@@ -427,7 +427,13 @@ async function handleEditorSubmit(event) {
  }
 }
 
-function init(){renderAll();setTab('play');$$('.tab').forEach(b=>b.addEventListener('click',()=>{beep();setTab(b.dataset.tab)}));$('#hero-start').onclick=()=>setTab('create');$('#hero-join').onclick=showConnection;$('#info-btn').onclick=showInfo;$('#switch-person').onclick=()=>{viewer=viewer==='a'?'b':'a';storeSet('whyus-viewer',viewer);refreshStudioContext();beep();renderAll()};$('#category-grid').addEventListener('click',e=>{const b=e.target.closest('[data-topic]');if(!b)return;setTopic(b.dataset.topic);setTab('create')});$('#use-daily').onclick=()=>{setTopic('couple');editorMode='bank';newDraft(todayQuestion());setTab('create')};$('#new-round').onclick=()=>setTab('create');$('.mode-pills').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b)return;beep();setMode(b.dataset.mode)};
+function init(){renderAll();setTab('play');$$('.tab').forEach(b=>b.addEventListener('click',()=>{beep();setTab(b.dataset.tab)}));$('#hero-start').onclick=()=>setTab('create');$('#hero-join').onclick=showConnection;$('#info-btn').onclick=showInfo;$('#switch-person').onclick=()=>{viewer=viewer==='a'?'b':'a';storeSet('whyus-viewer',viewer);refreshStudioContext();beep();renderAll()};$('#category-grid').addEventListener('click',e=>{const b=e.target.closest('[data-topic]');if(!b)return;setTopic(b.dataset.topic);setTab('create')});$('#use-daily').onclick=()=>{setTopic('couple');editorMode='bank';newDraft(todayQuestion());setTab('create')};$('#new-round').onclick=()=>setTab('create');
+ $('#studio-mode-picker').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-mode]');
+  if(!button)return;
+  beep();
+  setMode(button.dataset.mode);
+ });
  $('#game-content').addEventListener('click',async e=>{const answer=e.target.closest('[data-answer]');if(answer){await answerCurrent(Number(answer.dataset.answer));return}const a=e.target.closest('[data-stage]');if(!a)return;switch(a.dataset.stage){case 'create':setTab('create');break;case 'switch':$('#switch-person').click();break;case 'invite':showConnection();break;case 'open-answer':{const text=$('#open-response')?.value.trim();if(!text)return notify('請先輸入你的答案。');await answerCurrent(text);break}case 'next':await nextRound();break}});
  $('#editor-content').addEventListener('input',readAISettings);
  $('#editor-content').addEventListener('change',readAISettings);
