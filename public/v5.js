@@ -58,6 +58,7 @@ function showHome() {
 
 function compose() {
   const catalog=board.catalog.filter(item=>item.kind===screen&&(!filter||item.content.ability===filter));
+  const previous=$('#v5-compose select[name="catalog_id"]')?.value;
   const type=names[screen];
   $('#v5-compose').innerHTML=`<h2>${screen==='quiz'?'出題給對方':'發送挑戰'}</h2>
     ${screen==='performance'?`<label class="field">訓練能力<select id="v5-ability"><option value="">全部</option>${abilities.map(ability=>`<option ${ability===filter?'selected':''}>${ability}</option>`).join('')}</select></label>`:''}
@@ -65,6 +66,7 @@ function compose() {
     ${catalog.map(({id,content})=>`<option value="${e(id)}">${e(content.prompt)}${content.series?` · ${e(content.series)} #${content.sequence}`:''}</option>`).join('')}</select></label>
     ${catalog.length?'':`<p>目前沒有可發送的${screen==='quiz'?'題目':'挑戰'}。${board.role==='admin'?`可使用下方「管理題庫」提供 ${type} 的 Excel。`:''}</p>`}
     <div class="v5-tools"><button class="button primary" ${board.ready&&catalog.length?'':'disabled'}>發送所選</button><button class="button subtle" type="button" data-random ${board.ready&&catalog.length?'':'disabled'}>隨機發送一題</button></div></form>`;
+  if(catalog.some(item=>item.id===previous))$('#v5-compose select[name="catalog_id"]').value=previous;
 }
 
 function messageForm(thread,submission=null) {
@@ -120,6 +122,13 @@ function render() {
   $('#v5-pagination').innerHTML=`${offset?'<button class="button subtle" data-page="prev">上一頁</button>':''}${offset+30<board.total?'<button class="button subtle" data-page="next">下一頁互動</button>':''}`;
 }
 
+function hasInteractionDraft() {
+  const list=$('#v5-thread-list');
+  return recording||Array.from(list.querySelectorAll('form')).some(form=>
+    form.recordedAudio||form.querySelector('textarea')?.value||form.querySelector('input[type="file"]')?.files.length
+  )||Array.from(list.querySelectorAll('audio[src]')).some(audio=>!audio.paused);
+}
+
 async function refresh(background=false) {
   if(!account)return;
   const requestId=++refreshId;
@@ -128,8 +137,7 @@ async function refresh(background=false) {
   if(account?.user.id!==user||requestId!==refreshId)return;
   if(background&&!needsRender&&board&&JSON.stringify(data)===JSON.stringify(board))return;
   board=data;
-  const focus=document.activeElement;
-  if(background&&(recording||focus.closest('#v5-thread-list form, #v5-compose, #v5-admin')||$('#v5-thread-list audio[src]'))) {needsRender=true;return;}
+  if(background&&screen!=='home'&&hasInteractionDraft()){needsRender=true;return;}
   needsRender=false;
   render();
 }
@@ -152,7 +160,7 @@ function openScreen(next,thread) {
   render();
   window.scrollTo({top:0,behavior:'instant'});
   if(thread)document.getElementById(`v5-thread-${thread}`)?.scrollIntoView({block:'start'});
-  refresh().catch(error=>notice(error.message));
+  refresh(true).catch(error=>notice(error.message));
 }
 
 async function send(action,args) {
