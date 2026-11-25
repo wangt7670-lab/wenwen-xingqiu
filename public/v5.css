@@ -1,0 +1,25 @@
+#v5-status { background:#fff5dc; border-radius:14px; color:#624925; padding:12px; white-space:pre-wrap; }
+[hidden] { display:none !important; }
+.v5-brand { color:inherit; text-decoration:none; }
+.v5-login { max-width:520px; margin:32px auto; }
+.v5-overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:20px; }
+.v5-overview h2 { font-size:1.1rem; }
+.v5-overview li { margin:.65em 0; overflow-wrap:anywhere; }
+#v5-module .section-heading { margin-top:12px; }
+#v5-compose,#v5-admin { min-height:0; }
+.v5-threads { display:grid; gap:12px; }
+.v5-thread,.v5-version { background:#fff; border:1px solid #ece9ed; border-radius:18px; padding:16px; overflow-wrap:anywhere; }
+.v5-thread summary { cursor:pointer; font-weight:850; }
+.v5-version { margin-block:12px; background:#faf7ff; }
+.v5-text { white-space:pre-wrap; }
+.v5-thread audio { width:min(100%,28rem); }
+.v5-methods { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+.v5-scroll { overflow:auto; max-height:28rem; }
+.v5-table { width:100%; border-collapse:collapse; }
+.v5-table th,.v5-table td { padding:9px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere; min-width:55px; }
+.v5-table th { background:#f0ecff; color:#4d3d83; position:sticky; top:0; }
+.v5-table td:nth-child(2) { min-width:142px; }
+.v5-muted { color:#655f72; }
+.v5-tools { display:flex; flex-wrap:wrap; gap:8px; }
+.v5-edit { border:1px solid var(--line); border-radius:12px; padding:10px; margin:12px 0; }
+@media(max-width:680px) { .v5-overview { grid-template-columns:1fr; } #v5-home .hero-art { min-height:155px; } .v5-thread,.v5-version { padding:12px; } }

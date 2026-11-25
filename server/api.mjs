@@ -5,6 +5,7 @@ import { getRoomQuestions, handleLibrary } from './library.mjs';
 import { handleChallenge } from './challenges.mjs';
 import { handlePlanetGame } from './planet-games.mjs';
 import { handleWordGame } from './five-word-games.mjs';
+import { handleV5 } from './v5-api.mjs';
 import { backendConfig } from './deployment.mjs';
 import { LEVELS, safeSourceUrl, STYLES, validDate } from '../public/question-tools.js';
 
@@ -186,6 +187,7 @@ async function generateForRoom(request) {
 export async function handleApi(request) {
   const url=new URL(request.url),p=url.pathname,method=request.method.toUpperCase();
   try {
+    if(p.startsWith('/api/v5/')) return await handleV5(request,p);
     if(method==='GET'&&p==='/api/health') {
       const deploymentContext=backendConfig().name;
       if(!ready())return json({ok:true,onlineReady:false,deploymentContext,...generatorFlags(),message:'尚未設定此環境的 Supabase 連線'});

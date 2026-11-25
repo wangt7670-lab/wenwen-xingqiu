@@ -15,8 +15,14 @@
   },
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.89",
+    "@supabase/supabase-js": "2.119.2",
+    "exceljs": "4.4.0",
     "pdfjs-dist": "^6.5.438",
     "saxes": "^6.0.0",
     "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.17",
+    "esbuild": "0.28.2"
   }
 }
