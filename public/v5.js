@@ -48,11 +48,9 @@ function clearAudio() {
 function showHome() {
   $('#v5-greeting').textContent=board.ready?`${board.members[board.me]}，今天想一起玩什麼？`:'請先設定第二個固定帳戶。';
   const received=board.threads.filter(pending);
-  const activity=board.threads.map(thread=>({thread,last:[...thread.messages,...thread.submissions]
-    .reduce((latest,item)=>item.created_at>latest?item.created_at:latest,thread.created_at)})).sort((a,b)=>b.last.localeCompare(a.last)).slice(0,6);
-  const entries=items=>items.length?`<ul>${items.map(({thread,last})=>`<li><button class="link-button" data-screen="${thread.kind}" data-open-thread="${e(thread.id)}">${e(thread.snapshot.prompt)}</button>${last?`<small> ${e(date(last))}</small>`:''}</li>`).join('')}</ul>`:'<p>目前沒有項目。</p>';
-  $('#v5-overview').innerHTML=[['待回答問題',received.filter(t=>t.kind==='quiz').map(thread=>({thread}))],
-    ['待完成挑戰',received.filter(t=>t.kind==='performance').map(thread=>({thread}))],['最新互動',activity]].map(([title,rows])=>
+  const entries=items=>items.length?`<ul>${items.map(thread=>`<li><button class="link-button" data-screen="${thread.kind}" data-open-thread="${e(thread.id)}">${e(thread.snapshot.prompt)}</button></li>`).join('')}</ul>`:'<p>目前沒有項目。</p>';
+  $('#v5-overview').innerHTML=[['待回答問題',received.filter(t=>t.kind==='quiz')],
+    ['待完成挑戰',received.filter(t=>t.kind==='performance')]].map(([title,rows])=>
     `<section class="side-card"><h2>${title}</h2>${entries(rows)}</section>`).join('');
 }
 
@@ -309,9 +307,12 @@ async function boot() {
     event.preventDefault();
     const form=event.target;
     run(form,async()=>{
-      const {email,password}=Object.fromEntries(new FormData(form));
+      const {account:identifier,password}=Object.fromEntries(new FormData(form));
+      const login=identifier.trim();
+      if(!login.includes('@')&&!/^[a-z0-9][a-z0-9_-]{0,31}$/i.test(login))throw Error('請輸入有效的帳號或電郵。');
+      const email=login.includes('@')?login:`${login.toLowerCase()}@wenwen.example.net`;
       const {error}=await client.auth.signInWithPassword({email,password});
-      if(error)throw Error('登入失敗，請核對電郵及密碼。');
+      if(error)throw Error('登入失敗，請核對帳號或電郵及密碼。');
       form.reset();notice('');
     });
   };

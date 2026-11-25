@@ -1,6 +1,6 @@
 # 問問星球 V5
 
-V5 首頁使用 Supabase Auth 的電郵與密碼登入。「考考你」和「請開始你的表演」共用一個私人雙人空間。Supabase Realtime 會通知兩端重新讀取資料，瀏覽器亦每 12 秒檢查更新。離線期間送出的互動可在下次登入時接收。
+V5 首頁可用帳號或電郵，加上 Supabase Auth 密碼登入。「考考你」和「請開始你的表演」共用一個私人雙人空間。Supabase Realtime 會通知兩端重新讀取資料，瀏覽器亦每 12 秒檢查更新。離線期間送出的互動可在下次登入時接收。
 
 ## 環境與資料庫
 
@@ -15,6 +15,8 @@ insert into public.v5_members (user_id, slot, display_name, is_admin) values
 ```
 
 4. 依 `.env.example` 設定相同 Supabase 專案的網址、公開金鑰與伺服器 Secret Key。Deploy Preview 使用 `PREVIEW_SUPABASE_*` 與正式 Supabase 主機名稱檢查。Netlify Function 只向瀏覽器提供公開金鑰。
+
+正式帳戶可直接使用已配置的電郵登入。要在預覽環境使用簡短帳號，可把該測試使用者的 Auth 電郵設為 `<帳號>@wenwen.example.net`，帳號部分使用小寫。這類預覽地址無法收信。
 
 既有房間、問答和戰績資料留存在 V4 結構。V5 互動使用兩個已驗證的 Auth UUID，舊房間沒有這個帳戶對應，因此目前的 V5 活動列表從新互動開始。若日後要把舊紀錄顯示在 V5，須先核對哪些舊房間屬於這兩個帳戶。
 
