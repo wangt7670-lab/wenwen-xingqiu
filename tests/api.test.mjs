@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test, before, after } from 'node:test';
 import { handleApi } from '../server/api.mjs';
 import { BUCKET } from '../server/documents.mjs';
+import { changeWordGame } from '../public/five-word-game.js';
 
 const origin = 'https://isolated-db.example';
 const secret = 'sb_secret_testing_only';
-const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges'].map(name => [name, new Map()]));
+const tables = new Map(['quiz_rooms','quiz_documents','quiz_library_questions','quiz_challenges','quiz_planet_games','quiz_planet_questions','quiz_word_games'].map(name => [name, new Map()]));
 const blobs = new Map();
 const fetchBefore = globalThis.fetch;
 const envBefore = { ...process.env };
@@ -51,6 +52,17 @@ async function mockSupabase(url, { method, headers, body }) {
     if ([...questions.values()].some(item => item.room_code === q.room_code && item.fingerprint === q.fingerprint)) return Response.json('duplicate');
     questions.set(q.id, { ...q, created_at: new Date().toISOString() });
     return Response.json('ok');
+  }
+  if (path === 'rpc/draw_quiz_word_turn') {
+    const games = tables.get('quiz_word_games');
+    const row = games.get(data.p_room_code);
+    if (row?.version !== data.p_version) return Response.json([]);
+    try {
+      const state = changeWordGame(row.state,data.p_action,{id:data.p_game_id,turn:data.p_turn},data.p_player,data.p_catalog,Date.now());
+      const updated = {...row,version:row.version+1,state};
+      games.set(data.p_room_code,updated);
+      return Response.json([updated]);
+    } catch { return Response.json([]); }
   }
   const rows = tables.get(path);
   assert.ok(rows, path);
@@ -99,6 +111,44 @@ async function call(path, { method = 'GET', body, raw, filename, token } = {}) {
 }
 
 const post = (path, token, body) => call(path, {method:'POST',token,body});
+
+test('story relay requires both consents, serializes drawing and reviews, and clears only the relay', async () => {
+  const {a,b,path} = await pair();
+  const outsider = await pair();
+  const endpoint = path+'/word-game';
+  const originalRoom = (await call(path,{token:a.token})).room;
+  assert.equal((await call(endpoint,{token:outsider.a.token})).status,403);
+  assert.equal((await call(endpoint)).status,401);
+  const settings = { version:0, mode:'relay', theme:'甜蜜', total:4, agree:true };
+  assert.equal((await post(endpoint+'/setup',b.token,settings)).status,403);
+  let result = await post(endpoint+'/setup',a.token,settings);
+  const args = () => ({ version:result.version, id:result.game.id, turn:result.game.turns.length });
+  assert.equal(result.game.turns.length,0);
+  assert.equal((await post(endpoint+'/start',a.token,args())).status,409);
+  result = await post(endpoint+'/consent',b.token,{...args(),agree:true});
+  const race = await Promise.all([post(endpoint+'/start',a.token,args()),post(endpoint+'/start',a.token,args())]);
+  assert.deepEqual(race.map(r=>r.status).sort(),[200,409]);
+  result = race.find(r=>r.status===200);
+  assert.deepEqual((await call(endpoint,{token:b.token})).game,result.game);
+  const cards = result.game.turns[0].cards.map(card=>card.id);
+  assert.equal((await post(endpoint+'/submit',b.token,{...args(),format:'text',text:'wrong player'})).status,409);
+  result = await post(endpoint+'/submit',a.token,{...args(),format:'oral',text:''});
+  const review = {...args(),words:cards,bonus:5};
+  assert.equal((await post(endpoint+'/score',a.token,review)).status,409);
+  assert.equal((await post(endpoint+'/submit',a.token,{...args(),format:'text',text:'overwrite'})).status,409);
+  result = await post(endpoint+'/score',b.token,review);
+  assert.equal(result.game.scores[a.playerId],15);
+  assert.equal((await post(endpoint+'/score',b.token,review)).status,409);
+  const next = args();
+  result = await post(endpoint+'/next',b.token,next);
+  assert.equal((await post(endpoint+'/next',b.token,next)).status,409);
+  assert.equal(result.game.turns[1].writer,b.playerId);
+  assert.ok(result.game.turns[1].cards.every(card=>!cards.includes(card.id)));
+  const cleared = await post(endpoint+'/clear',b.token,args());
+  assert.ok(cleared.version>result.version);
+  assert.equal((await call(endpoint,{token:a.token})).game,null);
+  assert.deepEqual((await call(path,{token:a.token})).room,originalRoom);
+});
 
 async function pair() {
   const a = await post('/api/rooms',null,{name:'Alpha'});
@@ -240,4 +290,43 @@ test('challenge is versioned, alternates turns, resumes and records points indep
   assert.equal(result.challenge.scores[a.playerId],20);
   assert.equal(result.challenge.scores[b.playerId],10);
   assert.equal((await call(path,{token:a.token})).room.players[0].score,0);
+});
+
+test('250-card room rounds hide both answers until simultaneous submissions and keep legacy records', async () => {
+  const {a,b,path} = await pair();
+  const foreign = await pair();
+  const endpoint = path+'/planet-game';
+  const roomBefore = (await call(path,{token:a.token})).room;
+  const card = { id:'Q001', answer_type:'quiz', question:'Cloud quiz probe', default_enabled:true,
+    sensitivity:'low', correct_answer:' four ', explanation:'Reason', difficulty:1, points:10, time_limit_seconds:20 };
+  tables.get('quiz_planet_questions').set(card.id,{id:card.id,answer_type:'quiz',content:card});
+  assert.equal((await call(endpoint,{token:foreign.a.token})).status,403);
+  const started = await post(endpoint+'/start',a.token,{mode:'quiz',difficulty:1,count:1});
+  assert.equal(started.status,200);
+  assert.equal(started.game.correctAnswer,undefined);
+  const turn = {id:started.game.id,step:0};
+  assert.equal((await post(endpoint+'/next',a.token,turn)).status,409);
+  assert.equal((await post(endpoint+'/rate',b.token,{...turn,correct:true})).status,409);
+  const submissions = await Promise.all([
+    post(endpoint+'/submit',a.token,{...turn,text:'four'}),
+    post(endpoint+'/submit',b.token,{...turn,text:'四個'})
+  ]);
+  assert.ok(submissions.every(response=>response.status===200));
+  const earlier = submissions.find(result=>!result.game.revealed);
+  assert.ok(earlier);
+  assert.equal(earlier.game.entries,undefined);
+  assert.equal(earlier.game.explanation,undefined);
+  const revealed = await call(endpoint,{token:a.token});
+  assert.equal(revealed.game.entries[b.playerId].text,'四個');
+  assert.equal(revealed.game.correctAnswer,card.correct_answer);
+  assert.equal((await post(endpoint+'/submit',a.token,{...turn,text:'again'})).status,409);
+  assert.equal((await post(endpoint+'/next',a.token,turn)).status,409);
+  for(const [player,correct] of [[a,true],[b,false],[b,true],[b,true]]) {
+    assert.equal((await post(endpoint+'/rate',player.token,{...turn,correct})).status,200);
+  }
+  const completed = await post(endpoint+'/next',b.token,turn);
+  assert.equal(completed.game.completed,true);
+  assert.deepEqual(completed.game.scores,{[a.playerId]:10,[b.playerId]:10});
+  assert.deepEqual((await call(path,{token:a.token})).room,roomBefore);
+  assert.equal((await post(endpoint+'/start',a.token,{mode:'quiz',difficulty:1,count:1,previousId:turn.id})).status,422);
 });

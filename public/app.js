@@ -3,6 +3,9 @@ import { drawQuestion, isDuplicate } from './question-tools.js';
 import { quickEditor, bankEditor, escape, readReview, reviewCard, sourceLink } from './studio.js';
 import { challengePanel, documentsPanel, libraryPanel } from './library.js';
 import { localAiAvailable, rewriteOnDevice } from './local-ai.js';
+import { mountPlanetGame } from './planet-game-ui.js';
+import { gameModes } from './planet-game.js';
+import { mountWordGame } from './five-word-ui.js';
 
 (()=>{'use strict';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -22,6 +25,7 @@ const localDefault=()=>({players:[{id:'a',name:'我',score:0},{id:'b',name:'TA',
 function safeJson(k,fallback){try{return JSON.parse(localStorage.getItem(k))||fallback}catch{return fallback}}
 let demo=safeJson(SAVE_KEY,localDefault()),session=safeJson(SESSION_KEY,null),online=null,mode=session?'online':'demo',viewer=storeGet('whyus-viewer')||'a';
 let tab='play',topic='couple',editorMode='bank',draft=null,aiBusy=false,connected=false,poll=null,modalKind=null;
+let playMode=null;
 let playState, editingId=null, localAiEnabled=false, localAiBusy=false;
 const bankFilters={level:'',style:'',keywords:''};
 const aiSettings={topic:'couple',type:'open',level:'',style:'',count:1,keywords:''};
@@ -40,7 +44,36 @@ function notify(text){const wrap=$('#toast-wrap'),n=document.createElement('div'
 function beep(){ /* 靜音設計：沒有背景音樂或遊戲聲音 */ }
 function burst(){const el=$('#burst-layer'),cols=['#8b7ce9','#f3b09f','#f1d483','#adddca','#c8b7eb'];for(let i=0;i<42;i++){const n=document.createElement('i');n.className='confetti';n.style.left=Math.random()*100+'%';n.style.setProperty('--color',cols[i%5]);n.style.setProperty('--dur',(2.3+Math.random()*2.5)+'s');n.style.animationDelay=(Math.random()*.6)+'s';el.append(n);setTimeout(()=>n.remove(),5400)}}
 function todayQuestion(){const seed=Math.floor(new Date().setHours(0,0,0,0)/86400000);const arr=bank.filter(q=>q.topic==='couple');return arr[Math.abs(seed)%arr.length]}
-function setTab(next){tab=next;$$('.tab').forEach(b=>{const a=b.dataset.tab===tab;b.classList.toggle('active',a);b.setAttribute('aria-selected',String(a))});$$('.pane').forEach(p=>p.classList.toggle('active',p.id===tab+'-pane'));if(tab==='create'){renderEditor();loadEditorArea()}if(tab==='challenge'){renderChallenge();refreshChallenge(true)}if(tab==='diary')renderDiary();window.scrollTo({top:Math.min(window.scrollY,520),behavior:'smooth'})}
+function setPlayMode(next) {
+ playMode=Object.hasOwn(gameModes,next)?next:null;
+ $('#game-content').hidden=Boolean(playMode);
+ $('#turn-tag').hidden=Boolean(playMode);
+ $('#play-question-bank').hidden=!playMode;
+ for(const button of $$('.play-picker button')) {
+  const selected=(button.dataset.planetEntry??null)===playMode;
+  button.classList.toggle('active',selected);
+  button.setAttribute('aria-pressed',String(selected));
+ }
+ if(playMode)planetGame.open(playMode);
+ try{sessionStorage.setItem('wenwen-play-mode',playMode??'')}catch{}
+}
+
+function setTab(next) {
+ tab=next;
+ for(const button of $$('.tab')){
+  const active=button.dataset.tab===tab;
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));
+ }
+ for(const pane of $$('.pane'))pane.classList.toggle('active',pane.id===tab+'-pane');
+ if(tab==='play')setPlayMode(null);
+ if(tab==='create'){renderEditor();loadEditorArea()}
+ if(tab==='challenge'){renderChallenge();refreshChallenge(true)}
+ if(tab==='diary')renderDiary();
+ if(tab==='word')wordGame.open();
+ try{sessionStorage.setItem('wenwen-last-pane',tab)}catch{}
+ window.scrollTo({top:Math.min(window.scrollY,520),behavior:'smooth'});
+}
 function renderHeader(){const r=room(),a=r.players?.[0],b=r.players?.[1];$('#name-a').textContent=a?.name||'等待加入';$('#name-b').textContent=b?.name||'等待加入';$('#avatar-a').textContent=(a?.name||'我').slice(0,2);$('#avatar-b').textContent=(b?.name||'TA').slice(0,2);$('#score-name-a').textContent=a?.name||'我';$('#score-name-b').textContent=b?.name||'TA';$('#score-a').textContent=a?.score||0;$('#score-b').textContent=b?.score||0;let total=(a?.score||0)+(b?.score||0);$('#score-progress').style.width=(total?Math.max(7,Math.round((a?.score||0)/total*100)):50)+'%';$('#score-caption').textContent=total?'繼續出題，看看還會發現什麼':'第一個挑戰即將開始';$('#pair-state').textContent=mode==='online'? (r.players?.length===2?'你們已經連線，可以輪流出題':'等待另一半加入房間…') : ('目前由 '+player(me()).name+' 操作 · 可切換角色');$('#switch-person').style.display=mode==='online'?'none':'inline-flex';$('#switch-person').textContent='切換玩家 ↔'}
 function renderCats(){const wrap=$('#category-grid');wrap.innerHTML=CATS.map(c=>`<button class="category-card ${topic===c.id?'selected':''}" data-topic="${c.id}" aria-label="選擇${escape(c.name)}"><span class="cat-asterisk">✧</span><span class="cat-icon" style="--c:${c.color}">${c.emoji}</span><b>${escape(c.name)}</b><small>${escape(c.sub)}</small></button>`).join('')}
 function resultContent(q){if(q.type==='open')return `<div class="result-panel"><span class="result-tag">💭 完成簡答 · +5 星</span><h3>看看彼此的答案吧 ♡</h3><p><b>${escape(player(q.answerBy).name)}的回答：</b>${escape(q.answerText||'已回覆')}</p>${q.referenceAnswer?`<p class="reference-answer"><b>出題者的參考答案：</b>${escape(q.referenceAnswer)}</p>`:''}<p>${escape(q.explanation||'答案沒有自動判對錯，先聊聊你們的想法吧。')}</p>${sourceLink(q)}</div>`;return `<div class="result-panel ${q.isCorrect?'correct':'wrong'}"><span class="result-tag">${q.isCorrect?'✦ 回答正確 · +10 星星':'✧ 差一點點 · 下次再挑戰'}</span><h3>${q.isCorrect?'好厲害！這顆知識星星是你的。':'猜錯也沒關係，收下今天的新知識！'}</h3><p><b>正確答案：</b>${escape(q.options[q.answerIndex]||'')}</p><p>${escape(q.explanation||'')}</p>${sourceLink(q)}</div>`}
@@ -89,7 +122,7 @@ function saveDesk(desk,key=deskKey()) {
 
 function renderEditor() {
  const body=$('#editor-content');
- $$('.mode-pill').forEach(button=>{
+ $$('#studio-mode-picker [data-mode]').forEach(button=>{
   const selected=button.dataset.mode===editorMode;
   button.classList.toggle('active',selected);
   button.setAttribute('aria-pressed',String(selected));
@@ -208,7 +241,7 @@ async function refreshOnline() {
   }
  }
 }
-function startPolling(){clearInterval(poll);poll=setInterval(()=>{if(mode==='online'&&session)refreshOnline()},2200)}
+function startPolling(){clearInterval(poll);poll=setInterval(()=>{if(mode==='online'&&session){refreshOnline();planetGame.refresh();wordGame.refresh()}},2200)}
 function refreshStudioContext() {
  draft=null;
  editingId=null;
@@ -216,6 +249,8 @@ function refreshStudioContext() {
  challenge=null;challengeVersion=-1;challengeKey='';challengeNew=false;challengeSelection.clear();
  if(tab==='create'){renderEditor();loadEditorArea()}
  if(tab==='challenge'){renderChallenge();refreshChallenge(true)}
+ if(tab==='play'&&playMode)planetGame.open(playMode,true);
+ if(tab==='word')wordGame.open();
 }
 function leaveOnline(){clearInterval(poll);mode='demo';session=null;online=null;connected=false;localAiEnabled=false;saveSession();refreshStudioContext();renderAll()}
 function connectRoom(s,data){session={room:data.code,playerId:data.playerId,token:data.token};saveSession();mode='online';connected=true;online=data.room;localAiEnabled=data.localAiEnabled===true;startPolling();hideDialog();beep('win');refreshStudioContext();renderAll()}
@@ -392,7 +427,13 @@ async function handleEditorSubmit(event) {
  }
 }
 
-function init(){renderAll();setTab('play');$$('.tab').forEach(b=>b.addEventListener('click',()=>{beep();setTab(b.dataset.tab)}));$('#hero-start').onclick=()=>setTab('create');$('#hero-join').onclick=showConnection;$('#info-btn').onclick=showInfo;$('#switch-person').onclick=()=>{viewer=viewer==='a'?'b':'a';storeSet('whyus-viewer',viewer);refreshStudioContext();beep();renderAll()};$('#category-grid').addEventListener('click',e=>{const b=e.target.closest('[data-topic]');if(!b)return;setTopic(b.dataset.topic);setTab('create')});$('#use-daily').onclick=()=>{setTopic('couple');editorMode='bank';newDraft(todayQuestion());setTab('create')};$('#new-round').onclick=()=>setTab('create');$('.mode-pills').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b)return;beep();setMode(b.dataset.mode)};
+function init(){renderAll();setTab('play');$$('.tab').forEach(b=>b.addEventListener('click',()=>{beep();setTab(b.dataset.tab)}));$('#hero-start').onclick=()=>setTab('create');$('#hero-join').onclick=showConnection;$('#info-btn').onclick=showInfo;$('#switch-person').onclick=()=>{viewer=viewer==='a'?'b':'a';storeSet('whyus-viewer',viewer);refreshStudioContext();beep();renderAll()};$('#category-grid').addEventListener('click',e=>{const b=e.target.closest('[data-topic]');if(!b)return;setTopic(b.dataset.topic);setTab('create')});$('#use-daily').onclick=()=>{setTopic('couple');editorMode='bank';newDraft(todayQuestion());setTab('create')};$('#new-round').onclick=()=>setTab('create');
+ $('#studio-mode-picker').addEventListener('click',event=>{
+  const button=event.target.closest('button[data-mode]');
+  if(!button)return;
+  beep();
+  setMode(button.dataset.mode);
+ });
  $('#game-content').addEventListener('click',async e=>{const answer=e.target.closest('[data-answer]');if(answer){await answerCurrent(Number(answer.dataset.answer));return}const a=e.target.closest('[data-stage]');if(!a)return;switch(a.dataset.stage){case 'create':setTab('create');break;case 'switch':$('#switch-person').click();break;case 'invite':showConnection();break;case 'open-answer':{const text=$('#open-response')?.value.trim();if(!text)return notify('請先輸入你的答案。');await answerCurrent(text);break}case 'next':await nextRound();break}});
  $('#editor-content').addEventListener('input',readAISettings);
  $('#editor-content').addEventListener('change',readAISettings);
@@ -593,5 +634,25 @@ async function handleChallengeSubmit(event) {
  }
 }
 
+const planetGame=mountPlanetGame({
+ panel:$('#play-question-bank'),visible:()=>tab==='play'&&Boolean(playMode),session:()=>session,room,request:callApi,invite:showConnection
+});
+const wordGame=mountWordGame({
+ panel:$('#word-pane'),visible:()=>tab==='word',session:()=>session,room,request:callApi,invite:showConnection
+});
+let resumedPane,resumedPlayMode;
+try{
+ resumedPane=sessionStorage.getItem('wenwen-last-pane');
+ resumedPlayMode=sessionStorage.getItem('wenwen-play-mode');
+}catch{}
 init();
+if(resumedPane==='word')setTab('word');
+if(resumedPane==='planet')setPlayMode('quiz');
+if(resumedPane==='play'&&resumedPlayMode)setPlayMode(resumedPlayMode);
+$('#hero-word').onclick=()=>{
+ setTab('word');
+ $('#word-pane').scrollIntoView({block:'start'});
+};
+$('#play-original').onclick=()=>setPlayMode(null);
+for(const entry of $$('[data-planet-entry]'))entry.onclick=()=>setPlayMode(entry.dataset.planetEntry);
 })();
