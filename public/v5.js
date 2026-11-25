@@ -9,7 +9,7 @@ const e=escape;
 const date=value=>new Date(value).toLocaleString('zh-HK');
 const limit=3*1024*1024;
 let account,client,channel,board,refreshId=0,screen='home',offset=0,filter='',adminOpen=false,recording;
-let needsRender=false;
+let needsRender=false,foregroundRefresh=0;
 const expanded=new Set();
 const objectUrls=new Set();
 
@@ -130,16 +130,22 @@ function hasInteractionDraft() {
 }
 
 async function refresh(background=false) {
-  if(!account)return;
+  if(!account||(background&&foregroundRefresh))return;
   const requestId=++refreshId;
   const user=account.user.id;
-  const data=await call(`/board?offset=${offset}`);
-  if(account?.user.id!==user||requestId!==refreshId)return;
-  if(background&&!needsRender&&board&&JSON.stringify(data)===JSON.stringify(board))return;
-  board=data;
-  if(background&&screen!=='home'&&hasInteractionDraft()){needsRender=true;return;}
-  needsRender=false;
-  render();
+  const page=offset;
+  if(!background)foregroundRefresh=requestId;
+  try {
+    const data=await call(`/board?offset=${page}`);
+    if(account?.user.id!==user||requestId!==refreshId||page!==offset)return;
+    if(background&&!needsRender&&board&&JSON.stringify(data)===JSON.stringify(board))return;
+    board=data;
+    if(background&&screen!=='home'&&hasInteractionDraft()){needsRender=true;return;}
+    needsRender=false;
+    render();
+  } finally {
+    if(foregroundRefresh===requestId)foregroundRefresh=0;
+  }
 }
 
 function closeAdmin() {
